@@ -308,9 +308,6 @@ nav {
 #colorbox p {
     margin: 27px 0;
     }
-#swatches {
-    overflow: auto;
-    }
 #swatches li {
     display: inline-block;
     float: left;

@@ -4,14 +4,15 @@ pixel drawing app
 by dave rau
 
 [start]
-    get paper area
-    make grid
+x    get paper area
+x    make grid
+x    make swatch grid
 [middle]
-    draw events
-    pick color
-    change swatches
+x    draw events
+x    pick color
+x    change swatches
     grid resize
-    new doc
+x    new doc
     light/dark theme
 [end]
     save
@@ -46,7 +47,7 @@ var app = {
     },
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
-        gridInfo();
+        //gridInfo();
         update_save_list();
     },
     receivedEvent: function(id) {
@@ -54,25 +55,6 @@ var app = {
     }
 };
 
-// show a confirmation dialog
-function deleteDrawing() {
-    navigator.notification.confirm(
-        'Delete this drawing?', // message
-        confirmDelete, // callback
-        'Delete', // title
-        'Delete,Cancel' // buttonLabels
-    );
-    // reset confirmation
-    function confirmDelete(button) {
-        if (button === 1) {
-            localStorage.removeItem('pixelDrawing_' + draw.deleteId);
-            // remove id from array
-            //_.without(array, [*values]);
-            draw.deleteId = '';
-            update_save_list();
-       }
-    }
-}
 
 // fastclick
 window.addEventListener('load', function() {
@@ -83,138 +65,424 @@ window.addEventListener('load', function() {
 //localStorage.clear();
 
 // start
-var draw = {};
-    draw.ids = JSON.parse(localStorage.getItem('pixelDrawings')) || [];
-    draw.count = draw.ids.length || 0;
-    draw.selected = '#eee';
-    draw.deleteId = '';
+var px = {};
+    px.ids = JSON.parse(localStorage.getItem('pixelDrawings')) || [];
+    px.count = px.ids.length || 0;
+    px.selected = '#eee';
+    px.deleteId = '';
+    px.swatching = false;
 
 // grid iphone/ipad+
-    draw.gridsize = 19;
+    px.gridsize = 19;
     if (screen.width >= 600) {
-        draw.gridsize = 32;
+        px.gridsize = 32;
     }
 
 // dom cache
-    draw.$paper = document.getElementById('paper');
-    draw.$pixels = draw.$paper.getElementsByTagName('li');
-    draw.$papertds = draw.$paper.getElementsByTagName('td');
-    draw.$loadbox = document.getElementById('loadbox');
-    draw.$nav = document.getElementById('nav');
-    draw.$header = document.getElementById('header');
-    draw.$saved = document.getElementById('saved');
-    draw.$colorbox = document.getElementById('colorbox');
-    draw.$swatches = document.getElementById('swatches');
-    draw.$swatch1 = document.getElementById('swatch1');
-    draw.$swatch2 = document.getElementById('swatch2');
-    draw.$swatch3 = document.getElementById('swatch3');
-    draw.$swatch4 = document.getElementById('swatch4');
-    draw.$swatch5 = document.getElementById('swatch5');
-    draw.$swatch6 = document.getElementById('swatch6');
-    draw.$swatch7 = document.getElementById('swatch7');
-    draw.$swatch8 = document.getElementById('swatch8');
-    draw.$swatch9 = document.getElementById('swatch9');
-    draw.$swatch10 = document.getElementById('swatch10');
-    draw.$swatch11 = document.getElementById('swatch11');
-    draw.$swatch12 = document.getElementById('swatch12');
-    draw.$swatch13 = document.getElementById('swatch13');
-    draw.$swatch14 = document.getElementById('swatch14');
-    draw.$swatch15 = document.getElementById('swatch15');
-    draw.$swatch16 = document.getElementById('swatch16');
-    draw.$picker = document.getElementById('picker');
-    draw.$bnew = document.getElementById('new');
+    px.$paper = document.getElementById('paper');
+    px.$pixels = px.$paper.getElementsByTagName('li');
+    px.$papertds = px.$paper.getElementsByTagName('td');
+    px.$loadbox = document.getElementById('loadbox');
+    px.$nav = document.getElementById('nav');
+    px.$header = document.getElementById('header');
+    px.$saved = document.getElementById('saved');
+    px.$colorbox = document.getElementById('colorbox');
+    px.$swatches = document.getElementById('swatches');
+    px.$swatchpixels = px.$swatches.getElementsByTagName('li');
+    px.$swatch1 = document.getElementById('swatch1');
+    px.$swatch2 = document.getElementById('swatch2');
+    px.$swatch3 = document.getElementById('swatch3');
+    px.$swatch4 = document.getElementById('swatch4');
+    px.$swatch5 = document.getElementById('swatch5');
+    px.$swatch6 = document.getElementById('swatch6');
+    px.$swatch7 = document.getElementById('swatch7');
+    px.$swatch8 = document.getElementById('swatch8');
+    px.$swatch9 = document.getElementById('swatch9');
+    px.$swatch10 = document.getElementById('swatch10');
+    px.$swatch11 = document.getElementById('swatch11');
+    px.$swatch12 = document.getElementById('swatch12');
+    px.$swatch13 = document.getElementById('swatch13');
+    px.$swatch14 = document.getElementById('swatch14');
+    px.$swatch15 = document.getElementById('swatch15');
+    px.$swatch16 = document.getElementById('swatch16');
+    px.$picker = document.getElementById('picker');
+    px.$bnew = document.getElementById('new');
 
 
 function makeGrid(rows, cols) {
     var count = rows * cols;
     var docFragm = document.createDocumentFragment();
-    draw.$paper.innerHTML = '';
+    px.$paper.innerHTML = '';
     for (var i = 0; i < count; i++) {
         elem = document.createElement('li');
         elem.style.backgroundColor = '#fff';
-        elem.style.width = draw.gridsize + 'px';
-        elem.style.height = draw.gridsize + 'px';
+        elem.style.width = px.gridsize + 'px';
+        elem.style.height = px.gridsize + 'px';
         docFragm.appendChild(elem);
     }
-    draw.$paper.appendChild(docFragm);
-    draw.$paper.style.width = draw.paperw + 'px';
-    draw.$paper.style.height = draw.paperh + 'px';
+    px.$paper.style.width = px.paperw + 'px';
+    px.$paper.style.height = px.paperh + 'px';
+    px.$paper.appendChild(docFragm);
 }
 
 
 
 function clearGrid() {
-    // clear grid or redraw if not default size
-    if (draw.$paper.getElementsByTagName('tr').length === draw.baserows && draw.$paper.querySelector('tr:first-child td').length === draw.basecols) {
-        // loop tds
-        for (i = 0, max = draw.$papertds.length; i < max; i++) {
-            // set className to selected
-            draw.$papertds[i].className = draw.selected;
-        }
-    } else {
-        // redraw grid
-        makeGrid(draw.baserows, draw.basecols);
+    // redraw grid if not default size
+    if (px.$pixels.length !== px.baserows * px.basecols) {
+        makeGrid(px.baserows, px.basecols);
+    }
+    // loop and color
+    for (i = 0, max = px.$pixels.length; i < max; i++) {
+        px.$pixels[i].style.backgroundColor = px.selected;
     }
 }
 
 
-function initPicker() {
-    draw.$swatch1.style.backgroundColor = 'rgb(231, 136, 136)';
-    draw.$swatch2.style.backgroundColor = 'rgb(200, 37, 37)';
-    draw.$swatch3.style.backgroundColor = '#0a7de8';
-    draw.$swatch4.style.backgroundColor = '#2625c8';
-    draw.$swatch5.style.backgroundColor = '#7fd33d';
-    draw.$swatch6.style.backgroundColor = '#397930';
-    draw.$swatch7.style.backgroundColor = 'rgb(233, 233, 55)';
-    draw.$swatch8.style.backgroundColor = 'rgb(165, 156, 107)';
-    draw.$swatch9.style.backgroundColor = 'rgb(235, 151, 45)';
-    draw.$swatch10.style.backgroundColor = 'rgb(82, 67, 48)';
-    draw.$swatch11.style.backgroundColor = 'rgb(170, 132, 219)';
-    draw.$swatch12.style.backgroundColor = 'rgb(99, 32, 185)';
-    draw.$swatch13.style.backgroundColor = '#fff';
-    draw.$swatch14.style.backgroundColor = '#eee';
-    draw.$swatch15.style.backgroundColor = '#333';
-    draw.$swatch16.style.backgroundColor = '#000';
+function resetPicker() {
+    // function setSwatch(num, color) {
+    //     console.log( $swatch+num );
+    //     sw = px.$swatch+num;
+    //     sw.style.backgroundColor = color;
+    // }
+    // setSwatch(1,'rgb(231, 136, 136)');
+    px.$swatch1.style.backgroundColor = 'rgb(231, 136, 136)';
+    px.$swatch2.style.backgroundColor = 'rgb(200, 37, 37)';
+    px.$swatch3.style.backgroundColor = '#0a7de8';
+    px.$swatch4.style.backgroundColor = '#2625c8';
+    px.$swatch5.style.backgroundColor = '#7fd33d';
+    px.$swatch6.style.backgroundColor = '#397930';
+    px.$swatch7.style.backgroundColor = 'rgb(233, 233, 55)';
+    px.$swatch8.style.backgroundColor = 'rgb(165, 156, 107)';
+    px.$swatch9.style.backgroundColor = 'rgb(235, 151, 45)';
+    px.$swatch10.style.backgroundColor = 'rgb(82, 67, 48)';
+    px.$swatch11.style.backgroundColor = 'rgb(170, 132, 219)';
+    px.$swatch12.style.backgroundColor = 'rgb(99, 32, 185)';
+    px.$swatch13.style.backgroundColor = '#fff';
+    px.$swatch14.style.backgroundColor = '#eee';
+    px.$swatch15.style.backgroundColor = '#333';
+    px.$swatch16.style.backgroundColor = '#000';
 }
 
 
 // build swatch color picker
-function buildList(s, l) {
+function makeSwatches(s, l) {
     var docFragm = document.createDocumentFragment();
     var elem, contents;
-    draw.$swatches.innerHTML = '';
+    px.$swatches.innerHTML = '';
     for (var i = 0; i < 360; i += 2) {
         elem = document.createElement('li');
         elem.style.background = 'hsl(' + i + ', ' + s + '%, ' + l + '%)';
-        elem.style.width = draw.gridsize + 'px';
-        elem.style.height = draw.gridsize + 'px';
+        elem.style.width = px.gridsize + 'px';
+        elem.style.height = px.gridsize + 'px';
         docFragm.appendChild(elem);
     }
-    draw.$swatches.appendChild(docFragm);
+    px.$swatches.appendChild(docFragm);
 }
+
+
+
+// page actions
+jQuery(function(){
+
+
+    // grid setup/calc heights
+    px.margins = $('#tools').css('margin-right').replace('px', '');
+    px.paperw = window.innerWidth - $('#tools').width() - (px.margins * 3);
+    px.paperh = window.innerHeight - $('header')[0].offsetHeight - (px.margins * 3); // 3 is a magic number
+    px.cols = Math.floor(px.paperw / px.gridsize);
+    px.rows = Math.floor(px.paperh / px.gridsize);
+    px.basecols = px.cols;
+    px.baserows = px.rows;
+
+    // console log grid debug info
+    /*
+    function gridInfo() {
+        console.log('header h: '+ px.$header.offsetHeight );
+        console.log('margins: '+ (px.margins * 2) );
+
+        console.log('innerWidth: '+ window.innerWidth);
+        console.log('innerHeight: '+ window.innerHeight);
+
+        console.log('paperw: '+ px.paperw);
+        console.log('paperh: '+ px.paperh);
+        console.log('grid px: '+ px.gridsize);
+
+        console.log('grid: '+ px.cols + ' x ' +px.rows);
+    }
+    // show grid info for debugging/testing
+    gridInfo();
+    */
+
+
+    // let's draw!
+    makeGrid(px.rows, px.cols, 'w');
+
+        // drawing touch events
+        $("#paper").hammer({prevent_default: true})
+            .on("touch","li", function(e) {
+                this.style.backgroundColor = px.selected;
+            })
+            .on("doubletap","li", function(e) {
+                //console.log('dtap');
+            })
+            .on("dragstart","li", function(e) {
+                this.style.backgroundColor = px.selected;
+            })
+            .on("drag","li", function(e) {
+                var li = document.elementFromPoint(event.pageX, event.pageY);
+                if (li.localName === 'li') {
+                    li.style.backgroundColor = px.selected;
+                }
+        });
+
+
+    // colors! for the picker
+    resetPicker();
+
+        // pixel colors
+        $('#picker').hammer({prevent_default: true})
+            .bind('touch', function(e) {
+                if (px.swatching) {
+                    // color swap/select this to repick
+                    toggleSelected(e.target, px.$picker);
+                } else {
+                    // color select
+                    setColor(e.target.style.backgroundColor, px.$picker);
+                }
+            })
+            .bind('doubletap', function(e) {
+                var cbox = $('#colorbox');
+                if (!px.swatching) {
+                    px.swatching = true;
+                    toggleSelected(e.target, px.$picker);
+                } else {
+                    px.swatching = false;
+                    toggleSelected({}, px.$picker);
+                }
+                cbox.toggleClass('closed');
+                //$('#colorbox').toggleClass('closed');
+            })
+            .bind('dragstart', function(e) {
+                var li = e.target;
+                if (px.swatching) {
+                    toggleSelected(li, px.$picker);
+                } else {
+                    setColor(li.style.backgroundColor, px.$picker);
+                }
+            })
+            .bind('drag', function(e) {
+                var li = document.elementFromPoint(event.pageX, event.pageY);
+                if (px.swatching) {
+                    toggleSelected(li, px.$picker);
+                } else {
+                    setColor(li.style.backgroundColor, px.$picker);
+                }
+            })
+            .bind('dragend', function(e) {
+        });
+
+
+    // color swatches
+    var colors = {
+        's': document.getElementById('s').value * 2, // saturation
+        'l': document.getElementById('l').value * 2 // luminosity
+    };
+    makeSwatches(colors.s, colors.l);
+
+        $('nav, #colorbox').removeClass('hide');
+        $('#colorbox').height( $('#paper').height() ).width( $('#paper').width() ); // size same as #paper
+
+        // change swatch color
+        $('#swatches').hammer({prevent_default: true})
+            .bind('touch', function(e) {
+                if (e.target.localName === 'li') {
+                    toggleSelected(e.target, px.$swatches);
+                    setColor(e.target.style.backgroundColor, px.$picker.getElementsByClassName('selected')[0]);
+                }
+            })
+            .bind('doubletap', function(e) {
+            })
+            .bind('dragstart', function(e) {
+                if (e.target.localName === 'li') {
+                    toggleSelected(e.target, px.$swatches);
+                    setColor(e.target.style.backgroundColor, px.$picker.getElementsByClassName('selected')[0]);
+                }
+            })
+            .bind('drag', function(e) {
+                var li = document.elementFromPoint(event.pageX, event.pageY);
+                if (li.localName === 'li') {
+                    toggleSelected(li, px.$swatches);
+                    setColor(li.style.backgroundColor, px.$picker.getElementsByClassName('selected')[0]);
+                }
+            })
+            .bind('dragend', function(e) {
+        });
+
+        // toggle selected class
+        function toggleSelected(elem, parent) {
+            if (parent.getElementsByClassName('selected')[0]) {
+                parent.getElementsByClassName('selected')[0].className = '';
+            }
+            elem.className = 'selected';
+        }
+        // change selected color
+        function setColor(color, target) {
+            px.selected = color;
+            px.$picker.style.backgroundColor = px.selected;
+            px.$bnew.style.backgroundColor = px.selected;
+            target.style.backgroundColor = px.selected;
+        }
+        // change selected picker color
+        function setPickerSelected() {
+            if (px.$picker.getElementsByClassName('selected')[0]) {
+                px.$picker.getElementsByClassName('selected')[0].style.backgroundColor = px.selected;
+            }
+        }
+
+
+        document.getElementById('s').onchange = function (e) {
+            colors.s = e.target.value * 2;
+            for (i = 0, max = px.$swatchpixels.length; i < max; i++) {
+                px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i  * 2) + ', ' + colors.s + '%, ' + colors.l + '%)';
+            }
+            setColor(px.$swatches.getElementsByClassName('selected')[0].style.backgroundColor, px.$picker);
+            setPickerSelected();
+        };
+
+        document.getElementById('l').onchange = function (e) {
+            colors.l = e.target.value * 2;
+            for (i = 0, max = px.$swatchpixels.length; i < max; i++) {
+                px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i  * 2) + ', ' + colors.s + '%, ' + colors.l + '%)';
+            }
+            setColor(px.$swatches.getElementsByClassName('selected')[0].style.backgroundColor, px.$picker);
+            setPickerSelected();
+        };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // buttons
+
+    // header toggle
+    $('header').click(function() {
+        if (!$('#loadbox').hasClass('closed')){
+            $('#loadbox').addClass('closed');
+        } else {
+            $('nav').toggleClass('closed');
+        }
+    });
+
+    // new
+    $('#new').click(function () {
+        clearGrid();
+        $('nav').toggleClass('closed');
+    });
+
+    // lights out mode
+    $('#lightsout').click(function () {
+        $('body').toggleClass('lightsout');
+        $('nav').addClass('closed');
+    });
+
+    // grid resize
+    document.getElementById('size').onchange = function (e) {
+        px.gridsize = e.target.value;
+        for (i = 0, max = px.$pixels.length; i < max; i++) {
+            px.$pixels[i].style.width = px.gridsize + 'px';
+            px.$pixels[i].style.height = px.gridsize + 'px';
+        }
+        // for (i = 0, max = px.$swatchpixels.length; i < max; i++) {
+        //     px.$swatchpixels[i].style.width = px.gridsize + 'px';
+        //     px.$swatchpixels[i].style.height = px.gridsize + 'px';
+        // }
+    };
+
+    // save
+    $('#save').click(function () {
+        // prompt for name; only save if name is not empty
+        var name = prompt('Name this drawing:');
+        if (!_.isEmpty(name)) {
+            // html table to canvas to png data
+            var paper = $('#paper');
+            //var paper = px.$paper;
+            html2canvas(paper, {
+                onrendered: function(canvas) {
+                var imageData = canvas.toDataURL("image/png");
+                saveDrawing(name, imageData);
+                }
+            });
+        }
+    });
+
+
+    // load button
+    $('#load').click(function () {
+        $('nav').addClass('closed');
+        $('#loadbox').removeClass('closed');
+    });
+
+    // load box setup
+    update_save_list();
+    // set loadbox height based on screen
+    $('#loadbox').height( window.innerHeight - px.$header.offsetHeight ); // consider 100% height load window
+
+    // load drawings
+    $("#loadbox")
+    .on("click", "span", function(){
+        $(this).next('.card').toggleClass('flip');
+    })
+    .on("click", ".back", function(){
+        id = $(this).parents('li').data('id');
+        px.deleteId = id;
+        deleteDrawing();
+    })
+    .on("click", "img", function(){
+        $('#loadbox, nav').addClass('closed');
+        id = $(this).parents('li').data('id');
+        loadDrawing(id);
+    });
+
+
+
+
+});
+
+
 
 
 // save drawings to localstorage
 function saveDrawing(name,imgData) {
-    //build object
-    var drawing = {};
-    drawing.id = _.size(draw.ids) + 1 || 1;
-    drawing.colors = [];
-    drawing.rows = draw.rows;
-    drawing.cols = draw.cols;
-    drawing.name = name;
-    drawing.img = imgData;
-    drawing.date = new Date();
-
-    // save color array
-    for (i = 0, max = draw.$papertds.length; i < max; i++) {
-        c = draw.$papertds[i].className;
+    var drawing = {
+        'id': _.size(px.ids) + 1 || 1,
+        'colors': [],
+        'rows': px.rows,
+        'cols': px.cols,
+        'name': name,
+        'img': imgData,
+        'date': new Date()
+    }
+    // colors
+    for (i = 0, max = px.$papertds.length; i < max; i++) {
+        c = px.$papertds[i].className;
         drawing.colors.push(c);
     }
-
+    //console.log(drawing);
     // update ids
-    draw.ids.push(drawing.id);
-    localStorage.setItem('pixelDrawings', JSON.stringify(draw.ids));
+    px.ids.push(drawing.id);
+    localStorage.setItem('pixelDrawings', JSON.stringify(px.ids));
 
     // save
     localStorage.setItem('pixelDrawing_' + (drawing.id), JSON.stringify(drawing));
@@ -230,23 +498,24 @@ function loadDrawing(id) {
     var drawing = JSON.parse(localStorage.getItem('pixelDrawing_' + id));
     if ($('#paper tr').length === drawing.rows && $('#paper tr:first-child td').length === drawing.cols) {
         // just load drawing, don't redraw grid
-        for (i = 0, max = draw.$papertds.length; i < max; i++) {
-            draw.$papertds[i].className = drawing.colors[i];
+        for (i = 0, max = px.$papertds.length; i < max; i++) {
+            px.$papertds[i].className = drawing.colors[i];
         }
     } else {
         // redraw everything
-        var table = $('<table>');
-        tindex = 0;
-        for (var r = 0; r < drawing.rows; r++) {
-            var tr = $('<tr>');
-            for (var c = 0; c < drawing.cols; c++) {
-                var cssclass = drawing.colors[tindex]
-                $('<td class="'+cssclass+'"></td>').appendTo(tr);
-                tr.appendTo(table);
-                tindex++;
-            }
-        }
-        draw.$paper.innerHTML = table[0].innerHTML;
+        makeGrid(drawing.rows, drawing.cols, colors);
+        // var table = $('<table>');
+        // tindex = 0;
+        // for (var r = 0; r < drawing.rows; r++) {
+        //     var tr = $('<tr>');
+        //     for (var c = 0; c < drawing.cols; c++) {
+        //         var cssclass = drawing.colors[tindex]
+        //         $('<td class="'+cssclass+'"></td>').appendTo(tr);
+        //         tr.appendTo(table);
+        //         tindex++;
+        //     }
+        // }
+        px.$paper.innerHTML = table[0].innerHTML;
         $('#paper td').hammer({prevent_default: true});
     }
 }
@@ -254,11 +523,11 @@ function loadDrawing(id) {
 
 // update html load list
 function update_save_list() {
-    if (_.size(draw.ids) > 0) {
+    if (_.size(px.ids) > 0) {
         var html = '';
         $('#load, #loadbox').removeClass('hide');
-        for (i = 0, max = _.size(draw.ids); i < max; i++) {
-            var key = 'pixelDrawing_' + draw.ids[i];
+        for (i = 0, max = _.size(px.ids); i < max; i++) {
+            var key = 'pixelDrawing_' + px.ids[i];
             var drawing = localStorage.getItem(key);
             if (drawing) {
                 drawing = JSON.parse(drawing);
@@ -267,257 +536,32 @@ function update_save_list() {
                 }
             }
         }
-        draw.$saved.innerHTML = html;
+        px.$saved.innerHTML = html;
     } else {
         $('#load').addClass('hide');
     }
 }
 
 
-// page actions
-jQuery(function(){
 
 
-    // grid setup/calc heights
-    draw.margins = $('#tools').css('margin-right').replace('px', '');
-    draw.paperw = window.innerWidth - $('#tools').width() - (draw.margins * 3);
-    draw.paperh = window.innerHeight - $('header')[0].offsetHeight - (draw.margins * 3); // 3 is a magic number
-    draw.cols = Math.floor(draw.paperw / draw.gridsize);
-    draw.rows = Math.floor(draw.paperh / draw.gridsize);
-    draw.basecols = draw.cols;
-    draw.baserows = draw.rows;
-
-     // console log grid debug info
-    function gridInfo() {
-        console.log('header h: '+ draw.$header.offsetHeight );
-        console.log('margins: '+ (draw.margins * 2) );
-
-        console.log('innerWidth: '+ window.innerWidth);
-        console.log('innerHeight: '+ window.innerHeight);
-
-        console.log('paperw: '+ draw.paperw);
-        console.log('paperh: '+ draw.paperh);
-        console.log('grid px: '+ draw.gridsize);
-
-        console.log('grid: '+ draw.cols + ' x ' +draw.rows);
+// show a confirmation dialog
+function deleteDrawing() {
+    navigator.notification.confirm(
+        'Delete this drawing?', // message
+        confirmDelete, // callback
+        'Delete', // title
+        'Delete,Cancel' // buttonLabels
+    );
+    // reset confirmation
+    function confirmDelete(button) {
+        if (button === 1) {
+            localStorage.removeItem('pixelDrawing_' + px.deleteId);
+            // remove id from array
+            //_.without(array, [*values]);
+            px.deleteId = '';
+            update_save_list();
+       }
     }
-    // show grid info for debugging/testing
-    gridInfo();
+}
 
-    // set loadbox height based on screen
-    $('#loadbox').height( window.innerHeight - draw.$header.offsetHeight ); // consider 100% height load window
-
-    // run everything
-    makeGrid(draw.rows, draw.cols, 'w');
-    update_save_list();
-    $('nav, #colorbox').removeClass('hide');
-
-    // size colorbox same as paper
-    $('#colorbox').height( $('#paper').height() ).width( $('#paper').width() );
-    
-
-    // color swatches
-    // setup
-    var colors = {};
-    colors.list = document.getElementById('swatches');
-    colors.listitems = colors.list.getElementsByTagName('li');
-    colors.s = document.getElementById('s').value * 2; // saturation
-    colors.l = document.getElementById('l').value * 2; // luminosity
-    colors.size = 20; // px
-    buildList(colors.s, colors.l);
-
-    document.getElementById('s').onchange = function (e) {
-        colors.s = e.target.value * 2;
-        for (i = 0, max = colors.listitems.length; i < max; i++) {
-            colors.listitems[i].style.background = 'hsl(' + (i  * 2) + ', ' + colors.s + '%, ' + colors.l + '%)';
-        }
-    };
-
-    document.getElementById('l').onchange = function (e) {
-        colors.l = e.target.value * 2;
-        for (i = 0, max = colors.listitems.length; i < max; i++) {
-            colors.listitems[i].style.background = 'hsl(' + (i  * 2) + ', ' + colors.s + '%, ' + colors.l + '%)';
-        }
-    };
-
-    document.getElementById('size').onchange = function (e) {
-        draw.gridsize = e.target.value;
-        for (i = 0, max = colors.listitems.length; i < max; i++) {
-            colors.listitems[i].style.width = draw.gridsize + 'px';
-            colors.listitems[i].style.height = draw.gridsize + 'px';
-        }
-        // for (i = 0, max = colors.listitems.length; i < max; i++) {
-        //     colors.listitems[i].style.width = draw.gridsize + 'px';
-        //     colors.listitems[i].style.height = draw.gridsize + 'px';
-        // }
-    };
-
-    // init color picker
-    initPicker();
-
-
-    // save
-    $('#save').click(function () {
-        // prompt for name; only save if name is not empty
-        var name = prompt('Name this drawing:');
-        if (!_.isEmpty(name)) {
-            // html table to canvas to png data
-            var paper = $('#paper');
-            //var paper = draw.$paper;
-            html2canvas(paper, {
-                onrendered: function(canvas) {
-                var imageData = canvas.toDataURL("image/png");
-                saveDrawing(name, imageData);
-                }
-            });
-        }
-    });
-
-
-    // load drawings
-    $("#loadbox")
-    .on("click", "span", function(){
-        $(this).next('.card').toggleClass('flip');
-    })
-    .on("click", ".back", function(){
-        id = $(this).parents('li').data('id');
-        draw.deleteId = id;
-        deleteDrawing();
-    })
-    .on("click", "img", function(){
-        $('#loadbox, nav').addClass('closed');
-        id = $(this).parents('li').data('id');
-        loadDrawing(id);
-    });
-
-
-    // pixel colors
-    $('#picker').hammer({prevent_default: true})
-        .bind('touch', function(e) {
-            if (e.target.localName === 'li') {
-                draw.selected = e.target.style.backgroundColor;
-                draw.$picker.style.backgroundColor = draw.selected;
-                draw.$bnew.style.backgroundColor = draw.selected;
-            }
-        })
-        .bind('doubletap', function(e) {
-            //randomColors();
-            var li = e.target;
-            if (li.localName === 'li') {
-                li.className = 'selected';
-            }
-            $('#colorbox').toggleClass('closed');
-        })
-        .bind('dragstart', function(e) {
-            var li = e.target;
-            if (li.localName === 'li') {
-                draw.selected = li.style.backgroundColor;
-                draw.$picker.style.backgroundColor = draw.selected;
-                draw.$bnew.style.backgroundColor = draw.selected;
-            }
-        })
-        .bind('drag', function(e) {
-            var li = document.elementFromPoint(event.pageX, event.pageY);
-            if (li.localName === 'li') {
-                draw.selected = li.style.backgroundColor;
-                draw.$picker.style.backgroundColor = draw.selected;
-                draw.$bnew.style.backgroundColor = draw.selected;
-            }
-        })
-        .bind('dragend', function(e) {
-    });
-
-
-    // toggle selected class
-    function toggleSelected(elem, tag) {
-        if (draw.$swatches.getElementsByClassName('selected')[0]) {
-            draw.$swatches.getElementsByClassName('selected')[0].className = '';
-        }
-        elem.className = 'selected';
-    }
-    // change color
-    function setColor(color) {
-        draw.selected = color;
-        draw.$picker.style.backgroundColor = draw.selected;
-        draw.$bnew.style.backgroundColor = draw.selected;
-    }
-
-    // change swatch color
-    $('#swatches').hammer({prevent_default: true})
-        .bind('touch', function(e) {
-            if (e.target.localName === 'li') {
-                toggleSelected(e.target);
-                setColor(e.target.style.backgroundColor);
-            }
-        })
-        .bind('doubletap', function(e) {
-        })
-        .bind('dragstart', function(e) {
-            if (e.target.localName === 'li') {
-                toggleSelected(e.target);
-                setColor(e.target.style.backgroundColor);
-            }
-        })
-        .bind('drag', function(e) {
-            var li = document.elementFromPoint(event.pageX, event.pageY);
-            if (li.localName === 'li') {
-                toggleSelected(e.target);
-                setColor(e.target.style.backgroundColor);
-            }
-        })
-        .bind('dragend', function(e) {
-    });
-
-
-    // drawing touch events
-    $("#paper").hammer({prevent_default: true})
-        .on("touch","li", function(e) {
-            //this.className = draw.selected;
-            this.style.backgroundColor = draw.selected;
-        })
-        .on("doubletap","li", function(e) {
-            //console.log('dtap');
-        })
-        .on("dragstart","li", function(e) {
-            //this.className = draw.selected;
-            this.style.backgroundColor = draw.selected;
-        })
-        .on("drag","li", function(e) {
-            var li = document.elementFromPoint(event.pageX, event.pageY);
-            if (li.localName === 'li') {
-                //td.className = draw.selected;
-                li.style.backgroundColor = draw.selected;
-            }
-    });
-
-    
-    // buttons
-
-    // header toggle
-    $('header').click(function() {
-        if (!$('#loadbox').hasClass('closed')){
-            $('#loadbox').addClass('closed');
-        } else {
-            $('nav').toggleClass('closed');
-        }
-    });
-
-    // load button
-    $('#load').click(function () {
-        $('nav').addClass('closed');
-        $('#loadbox').removeClass('closed');
-    });
-
-    // new
-    $('#new').click(function () {
-        clearGrid();
-        $('nav').toggleClass('closed');
-    });
-
-    // lights out mode
-    $('#lightsout').click(function () {
-        $('body').toggleClass('lightsout');
-        $('nav').addClass('closed');
-    });
-
-});

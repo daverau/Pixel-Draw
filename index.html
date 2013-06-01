@@ -23,7 +23,7 @@
     <ul class="buttons">
         <li id="new" class="lg">new</li>
         <li id="lightsout">dark</li>
-        <li><input type="range" id="size" value="19" /></li>
+        <li><input type="range" id="size" value="19" min="1" /></li>
     </ul>
 </nav>
 
@@ -34,9 +34,9 @@
 </div>
 
 <div id="colorbox" class="box closed hide">
-    <ol id="swatches"></ol>
-    <p>intensity <input type="range" id="s" value="40" max="48" /></p>
-    <p>light/dark <input type="range" id="l" value="35" max="48" /></p>
+    <ol id="swatches" class="group"></ol>
+    <p>saturation <input type="range" id="s" value="40" max="48" /></p>
+    <p>lightness <input type="range" id="l" value="35" max="48" /></p>
 </div>
 
 <div class="workspace">
@@ -81,6 +81,7 @@
 <script type="text/javascript" src="cordova-2.7.0.js"></script>
 <script type="text/javascript" src="js/jquery-2.0.1.js"></script>
 <script type="text/javascript" src="js/underscore-min.js"></script>
+<script type="text/javascript" src="js/knockout-2.2.1.js"></script>
 <script type="text/javascript" src="js/jquery.hammer.min.js"></script>
 <script type="text/javascript" src="js/fastclick.js"></script>
 
