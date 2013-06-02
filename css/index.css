@@ -19,13 +19,6 @@
     -webkit-overflow-scrolling: touch;
     }
 
-/*
-#loadbox, #colorbox {
-    -webkit-transform: translate3d(0, 0, 0);
-    }
-
-    -webkit-transform: translate3d(0px, 0px, 0px);
-*/
 
 li {
     -webkit-transition: all .15s ;
@@ -39,6 +32,7 @@ li {
 nav.closed {
     -webkit-transform: translateY(-105px);
     transform: translateY(-105px);
+    z-index: 1 !important;
     }
 #loadbox.closed {
     -webkit-transform: translateY(-600px);
@@ -49,6 +43,10 @@ nav.closed {
     transform: translateX(-400px);
     }
 
+/* hack for top most layer; otherwise nav and loadbox appear on top during transition */
+header  {
+    -webkit-transform: translate3d(0,0,0);
+    }
 
 .hide {
     display: none;
