@@ -1,6 +1,32 @@
 
 /* junk drawer */
 
+function loadDrawing(id) {
+    var drawing = JSON.parse(localStorage.getItem('pixelDrawing_' + id));
+    if ($('#paper tr').length === drawing.rows && $('#paper tr:first-child td').length === drawing.cols) {
+        // just load drawing, don't redraw grid
+        for (i = 0, max = px.$pixels.length; i < max; i++) {
+            px.$pixels[i].style.backgroundColor = drawing.colors[i];
+        }
+    } else {
+        // redraw everything
+        makeGrid(drawing.rows, drawing.cols, colors);
+        // var table = $('<table>');
+        // tindex = 0;
+        // for (var r = 0; r < drawing.rows; r++) {
+        //     var tr = $('<tr>');
+        //     for (var c = 0; c < drawing.cols; c++) {
+        //         var cssclass = drawing.colors[tindex]
+        //         $('<td class="'+cssclass+'"></td>').appendTo(tr);
+        //         tr.appendTo(table);
+        //         tindex++;
+        //     }
+        // }
+        px.$paper.innerHTML = table[0].innerHTML;
+        $('#paper td').hammer({prevent_default: true});
+    }
+}
+
 
 // randomize colors
 function randomColors() {

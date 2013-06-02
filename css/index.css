@@ -19,6 +19,13 @@
     -webkit-overflow-scrolling: touch;
     }
 
+/*
+#loadbox, #colorbox {
+    -webkit-transform: translate3d(0, 0, 0);
+    }
+
+    -webkit-transform: translate3d(0px, 0px, 0px);
+*/
 
 li {
     -webkit-transition: all .15s ;
@@ -40,9 +47,6 @@ nav.closed {
 #colorbox.closed {
     -webkit-transform: translateX(-400px);
     transform: translateX(-400px);
-    }
-#loadbox, #colorbox {
-    -webkit-transform: translate3d(0, 0, 0);
     }
 
 
@@ -67,19 +71,7 @@ body {
     font: 11px verdana, sans-serif;
     color: #666;
     }
-.lightsout {
-    background: #000;
-    }
-.lightsout .box, .lightsout header, .lightsout nav {
-    background: #111;
-    }
-.lightsout h1, .lightsout li {
-    color: rgba(255,255,255,.3);
-    }
-.lightsout header {
-    color: rgba(255,255,255,.2);
-    border-bottom: 1px solid rgba(255,255,255,.1);
-    }
+
 
 img {
     width: 100%;
@@ -107,7 +99,7 @@ header  {
     margin: 0 0 8px;
     color: rgba(0,0,0,.1);
     position: relative;
-    z-index: 100;
+    z-index: 10000;
     width: 100%;
     }
 nav li {
@@ -240,6 +232,9 @@ li.selected {
     }
 
 
+.workspace {
+    margin: 0;
+    }
 .workspace ul, .workspace ol {
     padding: 0;
     list-style: none;
@@ -264,7 +259,6 @@ nav {
     left: 0;
     background: #222;
     color: #888;
-    -webkit-transform: translate3d(0px, 0px, 0px);
     z-index: 1;
     }
 .load h3 {
@@ -311,7 +305,7 @@ nav {
 #swatches li {
     display: inline-block;
     float: left;
-    width: 20px;
+    width: 10%;
     height: 20px;
     border: 2px solid rgba(0,0,0,0);
     }
@@ -423,3 +417,23 @@ input[type="range"]::-webkit-slider-thumb {
 
 
 }
+
+
+
+/* dark theme/lightsout mode */
+.lightsout {
+    background: #000;
+    }
+.lightsout .box, .lightsout header, .lightsout nav {
+    background: #111 !important;
+    }
+.lightsout h1, .lightsout li {
+    color: rgba(255,255,255,.3);
+    }
+.lightsout header {
+    color: rgba(255,255,255,.2);
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+.lightsout input[type="range"] {
+    background: rgba(255,255,255,.1);
+    }

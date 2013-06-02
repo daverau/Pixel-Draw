@@ -1,6 +1,6 @@
 /*
 
-pixel drawing app
+pixel draw
 by dave rau
 
 [start]
@@ -20,22 +20,6 @@ x    new doc
     delete
     share?
     local save?
-
-[do]
-- use background color instead of css class name
-- change save object to use color index keys; swap values for keys when saving colors array
-
-- switch table to list and test speed
-- add grid slider control for tests
-
-- picker show selected colors on left and right (css selected class; and remove color class)
-
-- load page sorting by id
-- save ids to array; ditch counter
-
-
-
-
 
 */
 var app = {
@@ -81,7 +65,6 @@ var px = {};
 // dom cache
     px.$paper = document.getElementById('paper');
     px.$pixels = px.$paper.getElementsByTagName('li');
-    px.$papertds = px.$paper.getElementsByTagName('td');
     px.$loadbox = document.getElementById('loadbox');
     px.$nav = document.getElementById('nav');
     px.$header = document.getElementById('header');
@@ -173,8 +156,8 @@ function makeSwatches(s, l) {
     for (var i = 0; i < 360; i += 2) {
         elem = document.createElement('li');
         elem.style.background = 'hsl(' + i + ', ' + s + '%, ' + l + '%)';
-        elem.style.width = px.gridsize + 'px';
-        elem.style.height = px.gridsize + 'px';
+        //elem.style.width = px.gridsize + 'px';
+        //elem.style.height = px.gridsize + 'px';
         docFragm.appendChild(elem);
     }
     px.$swatches.appendChild(docFragm);
@@ -196,8 +179,8 @@ jQuery(function(){
     px.baserows = px.rows;
 
     // console log grid debug info
-    /*
     function gridInfo() {
+
         console.log('header h: '+ px.$header.offsetHeight );
         console.log('margins: '+ (px.margins * 2) );
 
@@ -205,14 +188,16 @@ jQuery(function(){
         console.log('innerHeight: '+ window.innerHeight);
 
         console.log('paperw: '+ px.paperw);
-        console.log('paperh: '+ px.paperh);
-        console.log('grid px: '+ px.gridsize);
+        console.log('px w: '+ (px.gridsize * px.cols));
 
-        console.log('grid: '+ px.cols + ' x ' +px.rows);
+        console.log('paperh: '+ px.paperh);
+        console.log('px h: '+ (px.gridsize * px.rows));
+
+        console.log('grid: ' + px.cols + ' x ' +px.rows + ' (' + px.gridsize + 'px)');
     }
     // show grid info for debugging/testing
     gridInfo();
-    */
+
 
 
     // let's draw!
@@ -231,7 +216,7 @@ jQuery(function(){
             })
             .on("drag","li", function(e) {
                 var li = document.elementFromPoint(event.pageX, event.pageY);
-                if (li.localName === 'li') {
+                if (li.localName === 'li' && li.parentElement.id === 'paper') {
                     li.style.backgroundColor = px.selected;
                 }
         });
@@ -252,7 +237,7 @@ jQuery(function(){
                 }
             })
             .bind('doubletap', function(e) {
-                var cbox = $('#colorbox');
+                var cbox = document.getElementById('colorbox');
                 if (!px.swatching) {
                     px.swatching = true;
                     toggleSelected(e.target, px.$picker);
@@ -260,8 +245,7 @@ jQuery(function(){
                     px.swatching = false;
                     toggleSelected({}, px.$picker);
                 }
-                cbox.toggleClass('closed');
-                //$('#colorbox').toggleClass('closed');
+                cbox.classList.toggle('closed');
             })
             .bind('dragstart', function(e) {
                 var li = e.target;
@@ -340,7 +324,6 @@ jQuery(function(){
             }
         }
 
-
         document.getElementById('s').onchange = function (e) {
             colors.s = e.target.value * 2;
             for (i = 0, max = px.$swatchpixels.length; i < max; i++) {
@@ -378,23 +361,23 @@ jQuery(function(){
 
     // header toggle
     $('header').click(function() {
-        if (!$('#loadbox').hasClass('closed')){
-            $('#loadbox').addClass('closed');
+        if (!px.$loadbox.classList.contains('closed')){
+            !px.$loadbox.classList.add('closed');
         } else {
-            $('nav').toggleClass('closed');
+            px.$nav.classList.toggle('closed');
         }
     });
 
     // new
     $('#new').click(function () {
         clearGrid();
-        $('nav').toggleClass('closed');
+        px.$nav.classList.toggle('closed');
     });
 
     // lights out mode
     $('#lightsout').click(function () {
         $('body').toggleClass('lightsout');
-        $('nav').addClass('closed');
+        px.$nav.classList.add('closed');
     });
 
     // grid resize
@@ -416,9 +399,7 @@ jQuery(function(){
         var name = prompt('Name this drawing:');
         if (!_.isEmpty(name)) {
             // html table to canvas to png data
-            var paper = $('#paper');
-            //var paper = px.$paper;
-            html2canvas(paper, {
+            html2canvas(px.$paper, {
                 onrendered: function(canvas) {
                 var imageData = canvas.toDataURL("image/png");
                 saveDrawing(name, imageData);
@@ -430,8 +411,8 @@ jQuery(function(){
 
     // load button
     $('#load').click(function () {
-        $('nav').addClass('closed');
-        $('#loadbox').removeClass('closed');
+        px.$nav.classList.add('closed');
+        px.$loadbox.classList.remove('closed');
     });
 
     // load box setup
@@ -441,19 +422,19 @@ jQuery(function(){
 
     // load drawings
     $("#loadbox")
-    .on("click", "span", function(){
-        $(this).next('.card').toggleClass('flip');
-    })
-    .on("click", ".back", function(){
-        id = $(this).parents('li').data('id');
-        px.deleteId = id;
-        deleteDrawing();
-    })
-    .on("click", "img", function(){
-        $('#loadbox, nav').addClass('closed');
-        id = $(this).parents('li').data('id');
-        loadDrawing(id);
-    });
+        .on("click", "span", function(){
+            $(this).next('.card').toggleClass('flip');
+        })
+        .on("click", ".back", function(){
+            id = $(this).parents('li').data('id');
+            px.deleteId = id;
+            deleteDrawing();
+        })
+        .on("click", "img", function(){
+            $('#loadbox, nav').addClass('closed');
+            id = $(this).parents('li').data('id');
+            loadDrawing(id);
+        });
 
 
 
@@ -467,57 +448,49 @@ jQuery(function(){
 function saveDrawing(name,imgData) {
     var drawing = {
         'id': _.size(px.ids) + 1 || 1,
+        'colorindex': [],
         'colors': [],
+        'swatches': [],
         'rows': px.rows,
         'cols': px.cols,
+        'gridsize': px.gridsize,
         'name': name,
         'img': imgData,
         'date': new Date()
     }
     // colors
-    for (i = 0, max = px.$papertds.length; i < max; i++) {
-        c = px.$papertds[i].className;
+    for (i = 0, max = px.$pixels.length; i < max; i++) {
+        c = px.$pixels[i].style.backgroundColor;
         drawing.colors.push(c);
     }
-    //console.log(drawing);
+    drawing.colorindex = _.uniq(drawing.colors);
+    console.log(drawing);
     // update ids
     px.ids.push(drawing.id);
     localStorage.setItem('pixelDrawings', JSON.stringify(px.ids));
+
+    console.log(JSON.stringify(px.ids).length);
 
     // save
     localStorage.setItem('pixelDrawing_' + (drawing.id), JSON.stringify(drawing));
 
     // update html
     update_save_list();
-    $('nav').addClass('closed');
+    px.$nav.classList.add('closed');
 }
 
 
 // save drawings to localstorage
 function loadDrawing(id) {
     var drawing = JSON.parse(localStorage.getItem('pixelDrawing_' + id));
-    if ($('#paper tr').length === drawing.rows && $('#paper tr:first-child td').length === drawing.cols) {
-        // just load drawing, don't redraw grid
-        for (i = 0, max = px.$papertds.length; i < max; i++) {
-            px.$papertds[i].className = drawing.colors[i];
-        }
-    } else {
-        // redraw everything
-        makeGrid(drawing.rows, drawing.cols, colors);
-        // var table = $('<table>');
-        // tindex = 0;
-        // for (var r = 0; r < drawing.rows; r++) {
-        //     var tr = $('<tr>');
-        //     for (var c = 0; c < drawing.cols; c++) {
-        //         var cssclass = drawing.colors[tindex]
-        //         $('<td class="'+cssclass+'"></td>').appendTo(tr);
-        //         tr.appendTo(table);
-        //         tindex++;
-        //     }
-        // }
-        px.$paper.innerHTML = table[0].innerHTML;
-        $('#paper td').hammer({prevent_default: true});
+
+    // load color data, don't redraw grid
+    for (i = 0, max = px.$pixels.length; i < max; i++) {
+        px.$pixels[i].style.backgroundColor = drawing.colors[i];
     }
+
+    //px.$paper.innerHTML = table[0].innerHTML;
+    //$('#paper td').hammer({prevent_default: true});
 }
 
 
@@ -564,4 +537,3 @@ function deleteDrawing() {
        }
     }
 }
-
