@@ -1,5 +1,6 @@
 
 /* junk drawer */
+/*
 
 function loadDrawing(id) {
     var drawing = JSON.parse(localStorage.getItem('pixelDrawing_' + id));
@@ -136,7 +137,7 @@ function randomColors() {
 //                             'Device Version: '  + device.version  + '<br />';
 
 
-/*
+
     <table class="mini"></table>
 
     var table = $(li).find('.mini');
@@ -150,4 +151,6 @@ function randomColors() {
             tindex++;
         }
     }
+
+
 */

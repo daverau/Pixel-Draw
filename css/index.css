@@ -299,6 +299,8 @@ nav {
     }
 #colorbox p {
     margin: 27px 0;
+    width: 45%;
+    display: inline-block;
     }
 #swatches li {
     display: inline-block;
@@ -371,6 +373,9 @@ input[type="range"]::-webkit-slider-thumb {
         width: 32px;
         height: 32px;
         border: 0;
+        }
+    #swatches li {
+        height: 42px;
         }
     .box {
         top: 45px;

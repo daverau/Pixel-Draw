@@ -11,15 +11,20 @@ x    make swatch grid
 x    draw events
 x    pick color
 x    change swatches
-    grid resize
+x    grid resize
 x    new doc
-    light/dark theme
+x    light/dark theme
 [end]
-    save
-    load
-    delete
-    share?
-    local save?
+x    save (save swatches; use colors index map)
+x    local save
+    load (update swatches; color index map; grid calc)
+x    delete
+[polish]
+    delete last drawing has visual bug
+    stress test 100+ drawings for loading/deleting/saving
+    no jquery
+    knockout?
+
 
 */
 var app = {
@@ -31,7 +36,14 @@ var app = {
     },
     onDeviceReady: function() {
         app.receivedEvent('deviceready');
-        //gridInfo();
+
+        // save to library plugin
+        canvas2ImagePlugin = window.plugins.canvas2ImagePlugin;
+        
+        // grid debug info
+        gridInfo();
+        
+        // update load files list
         update_save_list();
     },
     receivedEvent: function(id) {
@@ -60,6 +72,8 @@ var px = {};
     px.gridsize = 19;
     if (screen.width >= 600) {
         px.gridsize = 32;
+        // increase max grid size slider
+        document.getElementById('size').max = 100;
     }
 
 // dom cache
@@ -91,6 +105,9 @@ var px = {};
     px.$picker = document.getElementById('picker');
     px.$bnew = document.getElementById('new');
 
+    px.$buttonsave = document.getElementById('save');
+    px.$buttonload = document.getElementById('load');
+
 
 function makeGrid(rows, cols) {
     var count = rows * cols;
@@ -98,6 +115,7 @@ function makeGrid(rows, cols) {
     px.$paper.innerHTML = '';
     for (var i = 0; i < count; i++) {
         elem = document.createElement('li');
+        //elem.style.backgroundColor = px.selected;
         elem.style.backgroundColor = '#fff';
         elem.style.width = px.gridsize + 'px';
         elem.style.height = px.gridsize + 'px';
@@ -274,8 +292,15 @@ jQuery(function(){
     };
     makeSwatches(colors.s, colors.l);
 
-        $('nav, #colorbox').removeClass('hide');
-        $('#colorbox').height( $('#paper').height() ).width( $('#paper').width() ); // size same as #paper
+        px.$colorbox.classList.remove('hide');
+        px.$nav.classList.remove('hide');
+
+        // size same as #paper
+        px.$colorbox.style.height = px.$paper.offsetHeight+'px';
+        px.$colorbox.style.width = px.$paper.offsetWidth+'px';
+
+        console.log(px.$colorbox.style.height);
+        console.log(px.$colorbox.style.width);
 
         // change swatch color
         $('#swatches').hammer({prevent_default: true})
@@ -383,18 +408,27 @@ jQuery(function(){
     // grid resize
     document.getElementById('size').onchange = function (e) {
         px.gridsize = e.target.value;
+        /*
         for (i = 0, max = px.$pixels.length; i < max; i++) {
             px.$pixels[i].style.width = px.gridsize + 'px';
             px.$pixels[i].style.height = px.gridsize + 'px';
         }
+        */
         // for (i = 0, max = px.$swatchpixels.length; i < max; i++) {
         //     px.$swatchpixels[i].style.width = px.gridsize + 'px';
         //     px.$swatchpixels[i].style.height = px.gridsize + 'px';
         // }
+
+        px.cols = Math.floor(px.paperw / px.gridsize);
+        px.rows = Math.floor(px.paperh / px.gridsize);
+
+        makeGrid(px.cols,px.rows);
+
     };
 
+    
     // save
-    $('#save').click(function () {
+    px.$buttonsave.onclick = function() {
         // prompt for name; only save if name is not empty
         var name = prompt('Name this drawing:');
         if (!_.isEmpty(name)) {
@@ -402,18 +436,22 @@ jQuery(function(){
             html2canvas(px.$paper, {
                 onrendered: function(canvas) {
                 var imageData = canvas.toDataURL("image/png");
+                // save to photo library
+                if (typeof canvas2ImagePlugin !== 'undefined') {
+                    canvas2ImagePlugin.saveImageDataToLibrary(function(msg){console.log(msg);},function(err){console.log(err);},canvas);
+                }
                 saveDrawing(name, imageData);
                 }
             });
         }
-    });
+    }
 
 
     // load button
-    $('#load').click(function () {
+    px.$buttonload.onclick = function() {
         px.$nav.classList.add('closed');
         px.$loadbox.classList.remove('closed');
-    });
+    }
 
     // load box setup
     update_save_list();
@@ -458,25 +496,37 @@ function saveDrawing(name,imgData) {
         'img': imgData,
         'date': new Date()
     }
+
     // colors
     for (i = 0, max = px.$pixels.length; i < max; i++) {
         c = px.$pixels[i].style.backgroundColor;
         drawing.colors.push(c);
     }
     drawing.colorindex = _.uniq(drawing.colors);
-    console.log(drawing);
+
+    // compress colors
+    var compressed = [];
+    for (i = 0, max = drawing.colors.length; i < max; i++) {
+        cid = drawing.colors[i];
+        compressed.push(drawing.colorindex.indexOf(cid));
+    }
+    drawing.colors = compressed;
+
+    // swatch colors
+    for (i = 1; i < 17; i++) {
+        c = px['$swatch' + i].style.backgroundColor;
+        drawing.swatches.push(c);
+    }
+
     // update ids
     px.ids.push(drawing.id);
-    localStorage.setItem('pixelDrawings', JSON.stringify(px.ids));
-
-    console.log(JSON.stringify(px.ids).length);
 
     // save
+    localStorage.setItem('pixelDrawings', JSON.stringify(px.ids));
     localStorage.setItem('pixelDrawing_' + (drawing.id), JSON.stringify(drawing));
 
     // update html
     update_save_list();
-    px.$nav.classList.add('closed');
 }
 
 
@@ -486,7 +536,12 @@ function loadDrawing(id) {
 
     // load color data, don't redraw grid
     for (i = 0, max = px.$pixels.length; i < max; i++) {
-        px.$pixels[i].style.backgroundColor = drawing.colors[i];
+        px.$pixels[i].style.backgroundColor = drawing.colorindex[drawing.colors[i]];
+    }
+
+    // load picker colors
+    for (i = 1; i < 17; i++) {
+        px['$swatch' + i].style.backgroundColor = drawing.swatches[i];
     }
 
     //px.$paper.innerHTML = table[0].innerHTML;
@@ -511,29 +566,35 @@ function update_save_list() {
         }
         px.$saved.innerHTML = html;
     } else {
-        $('#load').addClass('hide');
+        px.$buttonload.classList.add('hide');
     }
 }
 
 
 
-
 // show a confirmation dialog
 function deleteDrawing() {
-    navigator.notification.confirm(
-        'Delete this drawing?', // message
-        confirmDelete, // callback
-        'Delete', // title
-        'Delete,Cancel' // buttonLabels
-    );
-    // reset confirmation
-    function confirmDelete(button) {
-        if (button === 1) {
-            localStorage.removeItem('pixelDrawing_' + px.deleteId);
-            // remove id from array
-            //_.without(array, [*values]);
-            px.deleteId = '';
-            update_save_list();
-       }
+    if (navigator.notification) {
+        navigator.notification.confirm(
+            'Delete this drawing?', // message
+            confirmDelete, // callback
+            'Delete', // title
+            'Delete,Cancel' // buttonLabels
+        );
+        // reset confirmation
+        function confirmDelete(button) {
+            if (button === 1) {
+                removeDrawing();
+           }
+        }
+    } else {
+        removeDrawing();
+    }
+    function removeDrawing() {
+        localStorage.removeItem('pixelDrawing_' + px.deleteId);
+        px.ids = _.without(px.ids, px.deleteId);
+        localStorage.setItem('pixelDrawings', JSON.stringify(px.ids));
+        px.deleteId = '';
+        update_save_list();
     }
 }
