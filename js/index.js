@@ -17,10 +17,12 @@ x    light/dark theme
 [end]
 x    save (save swatches; use colors index map)
 x    local save
-    load (update swatches; color index map; grid calc)
+x    load (update swatches; color index map; grid calc)
 x    delete
 [polish]
+    grid size/calc not tight, ipad issues, save canvas is off
     delete last drawing has visual bug
+
     stress test 100+ drawings for loading/deleting/saving
     no jquery
     knockout?
@@ -83,6 +85,7 @@ var px = {};
     px.$nav = document.getElementById('nav');
     px.$header = document.getElementById('header');
     px.$saved = document.getElementById('saved');
+    px.$tools = document.getElementById('tools');
     px.$colorbox = document.getElementById('colorbox');
     px.$swatches = document.getElementById('swatches');
     px.$swatchpixels = px.$swatches.getElementsByTagName('li');
@@ -121,8 +124,11 @@ function makeGrid(rows, cols) {
         elem.style.height = px.gridsize + 'px';
         docFragm.appendChild(elem);
     }
-    px.$paper.style.width = px.paperw + 'px';
-    px.$paper.style.height = px.paperh + 'px';
+    // resize paper
+    px.$paper.style.width = (px.gridsize * cols) + 'px';
+    px.$paper.style.height = (px.gridsize * rows) + 'px';
+    //px.$paper.style.width = px.paperw + 'px';
+    //px.$paper.style.height = px.paperh + 'px';
     px.$paper.appendChild(docFragm);
 }
 
@@ -130,9 +136,10 @@ function makeGrid(rows, cols) {
 
 function clearGrid() {
     // redraw grid if not default size
-    if (px.$pixels.length !== px.baserows * px.basecols) {
-        makeGrid(px.baserows, px.basecols);
-    }
+    // if (px.$pixels.length !== px.baserows * px.basecols) {
+    //     makeGrid(px.baserows, px.basecols);
+    // }
+
     // loop and color
     for (i = 0, max = px.$pixels.length; i < max; i++) {
         px.$pixels[i].style.backgroundColor = px.selected;
@@ -533,8 +540,15 @@ function saveDrawing(name,imgData) {
 // save drawings to localstorage
 function loadDrawing(id) {
     var drawing = JSON.parse(localStorage.getItem('pixelDrawing_' + id));
+    // update grid size
+    px.gridsize = drawing.gridsize;
 
-    // load color data, don't redraw grid
+    // redraw grid if needed
+    if (px.$pixels.length !== drawing.rows * drawing.cols) {
+        makeGrid(drawing.rows, drawing.cols);
+    }
+
+    // load color data
     for (i = 0, max = px.$pixels.length; i < max; i++) {
         px.$pixels[i].style.backgroundColor = drawing.colorindex[drawing.colors[i]];
     }
@@ -543,9 +557,6 @@ function loadDrawing(id) {
     for (i = 1; i < 17; i++) {
         px['$swatch' + i].style.backgroundColor = drawing.swatches[i];
     }
-
-    //px.$paper.innerHTML = table[0].innerHTML;
-    //$('#paper td').hammer({prevent_default: true});
 }
 
 
