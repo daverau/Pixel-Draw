@@ -14,16 +14,18 @@
     user-select: none;
     }
 
+
 .scroll {
     overflow: scroll;
     -webkit-overflow-scrolling: touch;
     }
 
-
-li {
-    -webkit-transition: all .15s ;
-    transition: all .15s ;
+/*
+nothing {
+    -webkit-transition: all .15s;
+    transition: all .15s;
     }
+*/
 
 #loadbox, nav, #colorbox {
     -webkit-transition: -webkit-transform .6s ease;
@@ -39,8 +41,8 @@ nav.closed {
     transform: translateY(-600px);
     }
 #colorbox.closed {
-    -webkit-transform: translateX(-400px);
-    transform: translateX(-400px);
+    -webkit-transform: translateX(-2000px);
+    transform: translateX(-2000px);
     }
 
 /* hack for top most layer; otherwise nav and loadbox appear on top during transition */
@@ -53,7 +55,7 @@ header  {
     }
 
 /* reset */
-html, body, nav ul, ol {
+body, nav, nav ul, ol {
     padding: 0;
     margin: 0;
     }
@@ -63,7 +65,6 @@ nav ul, .load ol {
 
 html {
     width: 100%;
-    height: 100%;
     }
 body {
     font: 11px verdana, sans-serif;
@@ -74,6 +75,9 @@ body {
 img {
     width: 100%;
     border: 0;
+    }
+li {
+    list-style: none;
     }
 
 #debugbox {
@@ -94,10 +98,12 @@ header  {
     background: rgba(255,255,255,.8);
     background: #fff;
     text-align: center;
-    margin: 0 0 8px;
+    margin: 0;
     color: rgba(0,0,0,.1);
-    position: relative;
-    z-index: 10000;
+    position: absolute;
+    top: 0;
+    height: 35px;
+    z-index: 100;
     width: 100%;
     }
 nav li {
@@ -106,10 +112,10 @@ nav li {
     color: rgba(0,0,0,.4);
     }
 h1 {
-    font: 11px verdana;
+    font: 900 11px verdana;
+    line-height: 35px;
     color: rgba(0,0,0,.3);
     margin: 0;
-    padding: 10px;
     }
 
 .group:after {
@@ -121,35 +127,28 @@ h1 {
 #paper {
     margin: 0 0 0 8px;
     }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    }
+.gridlines td {
+    border: 1px solid rgba(87, 162, 209, .11);
+    }
 
 #tools {
     float: right;
     margin: 0 8px 0 0;
-    width: 44px;
+    width: 50px;
     text-align: center;
     }
 #picker {
     padding: 8px;
     }
-.gridlines li {
-    outline: 1px solid rgba(87, 162, 209, .11);
-/*    border-left: 1px solid rgba(87, 162, 209, .11);
-*/    }
-/*.gridlines {
-    border-right: 1px solid rgba(87, 162, 209, .11);
-    border-bottom: 1px solid rgba(87, 162, 209, .11);
-    }
-*/
+
 #picker li {
     border: 0;
     }
-#paper li {
-    float: left;
-    width: 19px;
-    height: 19px;
-    }
 #picker li {
-    width: 28px;
     height: 19px;
     }
 li.selected {
@@ -231,7 +230,7 @@ li.selected {
 
 
 .workspace {
-    margin: 0;
+    margin: 42px 0 0 0;
     }
 .workspace ul, .workspace ol {
     padding: 0;
@@ -255,6 +254,8 @@ nav {
     width: 100%;
     top: 34px;
     left: 0;
+    bottom: 0;
+    right: 0;
     background: #222;
     color: #888;
     z-index: 1;
@@ -266,12 +267,10 @@ nav {
     font-size: 9px;
     margin: 4px 0 8px;
     }
-.wrap {
-    padding: 10px 15px;
-    }
 #loadbox {
     text-align: center;
     z-index: 10;
+    background: #eee;
     }
 
 /* colors */
@@ -336,22 +335,21 @@ input[type="range"]::-webkit-slider-thumb {
     display: block;
     }
 
-/* iphone only */
-@media only screen and (max-width: 480px) {
-}
 
-/* ipad */
+/* ipad+ */
 @media only screen and (min-width: 480px) {
     header {
-        margin-bottom: 15px;
         height: 55px;
         }
     h1 {
         font-size: 18px;
-        padding: 15px;
+        line-height: 55px;
         }
     nav {
         top: 55px;
+        }
+    .workspace {
+        margin: 80px 0 0 0;
         }
     #tools {
         width: 85px;
@@ -366,10 +364,6 @@ input[type="range"]::-webkit-slider-thumb {
         }
     #picker li {
         float: left;
-        width: 37px;
-        height: 37px;
-        }
-    #paper li, #picker li {
         width: 32px;
         height: 32px;
         border: 0;
@@ -382,10 +376,10 @@ input[type="range"]::-webkit-slider-thumb {
         }
     #loadbox {
         top: 55px;
+        bottom: 0;
         }
     #saved li {
-        width: 120px;
-        min-height: 160px;
+        width: 17.8%;
         }
     #tools .buttons li {
         padding: 25px 20px;
@@ -413,12 +407,7 @@ input[type="range"]::-webkit-slider-thumb {
     #colorbox input[type="range"] {
         margin: 10px auto 35px;
         }
-    #colorbox.closed {
-        -webkit-transform: translateX(-1000px);
-        transform: translateX(-1000px);
-        }
-
-
+    
 }
 
 
@@ -426,6 +415,9 @@ input[type="range"]::-webkit-slider-thumb {
 /* dark theme/lightsout mode */
 .lightsout {
     background: #000;
+    }
+.lightsout #loadbox {
+    background: #333;
     }
 .lightsout .box, .lightsout header, .lightsout nav {
     background: #111 !important;
@@ -439,4 +431,11 @@ input[type="range"]::-webkit-slider-thumb {
     }
 .lightsout input[type="range"] {
     background: rgba(255,255,255,.1);
+    }
+
+
+/* pixel */
+td {
+    width: 19px;
+    height: 19px;
     }

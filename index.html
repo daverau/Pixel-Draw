@@ -9,8 +9,6 @@
     <meta name="viewport" id="vp" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width" />
     <meta name="viewport" id="vp" content="initial-scale=1.0,user-scalable=no,maximum-scale=1" media="(device-height: 568px)" /> 
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-
-    <link rel="apple-touch-icon-precomposed" href="happy.png"/>
     <link rel="stylesheet" type="text/css" href="css/index.css" />
     <title>Pixel Draw</title>
 </head>
@@ -23,11 +21,10 @@
     <ul class="buttons">
         <li id="new" class="lg">new</li>
         <li id="lightsout">dark</li>
-        <li><input type="range" id="size" value="19" min="10" max="50" /></li>
+        <li id="gridlines">lines</li>
+        <li><input type="range" id="size" value="13" min="3" max="25" /></li>
     </ul>
 </nav>
-
-<div id="debugbox" class="hide"></div>
 
 <div id="loadbox" class="load box closed scroll hide">
     <ol id="saved"></ol>
@@ -40,41 +37,41 @@
 </div>
 
 <div class="workspace">
-<div id="tools">
-    <ul id="picker" class="color_lg" draggable="true">
-        <li class="r" id="swatch1"></li>
-        <li class="rd" id="swatch2"></li>
- 
-        <li class="bl" id="swatch3"></li>
-        <li class="bd" id="swatch4"></li>
+    <div id="tools">
+        <ul id="picker" class="color_lg" draggable="true">
+            <li class="r" id="swatch1"></li>
+            <li class="rd" id="swatch2"></li>
+     
+            <li class="bl" id="swatch3"></li>
+            <li class="bd" id="swatch4"></li>
 
-        <li class="gr" id="swatch5"></li>
-        <li class="gd" id="swatch6"></li>
+            <li class="gr" id="swatch5"></li>
+            <li class="gd" id="swatch6"></li>
 
-        <li class="y" id="swatch7"></li>
-        <li class="yd" id="swatch8"></li>
+            <li class="y" id="swatch7"></li>
+            <li class="yd" id="swatch8"></li>
 
-        <li class="o" id="swatch9"></li>
-        <li class="od" id="swatch10"></li>
+            <li class="o" id="swatch9"></li>
+            <li class="od" id="swatch10"></li>
 
-        <li class="p" id="swatch11"></li>
-        <li class="td" id="swatch12"></li>
+            <li class="p" id="swatch11"></li>
+            <li class="td" id="swatch12"></li>
 
 
-        <li class="w" id="swatch13"></li>
-        <li class="lg" id="swatch14"></li>
-        <li class="g" id="swatch15"></li>
-        <li class="b" id="swatch16"></li>
-    </ul>
+            <li class="w" id="swatch13"></li>
+            <li class="lg" id="swatch14"></li>
+            <li class="g" id="swatch15"></li>
+            <li class="b" id="swatch16"></li>
+        </ul>
 
-    <ul class="buttons">
-        <li id="save">s</li>
-        <li id="load" class="hide">l</li>
-    </ul>
+        <ul class="buttons">
+            <li id="save">s</li>
+            <li id="load" class="hide">l</li>
+        </ul>
 
-</div>
+    </div>
 
-<ul id="paper" class="gridlines group"></ul>
+    <div id="paper" class="gridlines"></div>
 </div>
 
 

@@ -20,13 +20,12 @@ x    local save
 x    load (update swatches; color index map; grid calc)
 x    delete
 [polish]
-    grid size/calc not tight, ipad issues, save canvas is off
-    delete last drawing has visual bug
-
-    stress test 100+ drawings for loading/deleting/saving
-    no jquery
-    knockout?
-
+    grid size/calc not tight
+    bug save/load with diff grid sizes can be wrong
+x    delete last drawing should hide all and close load screen
+    bug dupe/2x save
+    bug loadbox height off
+    scroll bars
 
 */
 var app = {
@@ -54,6 +53,13 @@ var app = {
 };
 
 
+
+// // disable body scrolling
+// document.body.addEventListener('touchmove', function(event) {
+//   event.preventDefault();
+// }, false);
+
+
 // fastclick
 window.addEventListener('load', function() {
     new FastClick(document.body);
@@ -65,22 +71,25 @@ window.addEventListener('load', function() {
 // start
 var px = {};
     px.ids = JSON.parse(localStorage.getItem('pixelDrawings')) || [];
-    px.count = px.ids.length || 0;
-    px.selected = '#eee';
+    px.selected = '#fff';
     px.deleteId = '';
     px.swatching = false;
 
 // grid iphone/ipad+
-    px.gridsize = 19;
-    if (screen.width >= 600) {
+    px.gridsize = 18;
+    //px.gridsize = 28;
+    if (window.innerWidth >= 600) {
         px.gridsize = 32;
-        // increase max grid size slider
-        document.getElementById('size').max = 100;
     }
+    if (window.innerWidth >= 1200) {
+        px.gridsize = 75;
+    }
+
+    console.log( window.innerWidth / 20);
 
 // dom cache
     px.$paper = document.getElementById('paper');
-    px.$pixels = px.$paper.getElementsByTagName('li');
+    px.$pixels = px.$paper.getElementsByTagName('td');
     px.$loadbox = document.getElementById('loadbox');
     px.$nav = document.getElementById('nav');
     px.$header = document.getElementById('header');
@@ -110,8 +119,16 @@ var px = {};
 
     px.$buttonsave = document.getElementById('save');
     px.$buttonload = document.getElementById('load');
+    px.$gridsizer = document.getElementById('size');
+
+    // css style rules for td size
+    px.cssrules = document.styleSheets[0].cssRules;
+    px.css = {};
+    px.css.pixels = px.cssrules[px.cssrules.length - 1];
 
 
+/*
+single list
 function makeGrid(rows, cols) {
     var count = rows * cols;
     var docFragm = document.createDocumentFragment();
@@ -120,8 +137,8 @@ function makeGrid(rows, cols) {
         elem = document.createElement('li');
         //elem.style.backgroundColor = px.selected;
         elem.style.backgroundColor = '#fff';
-        elem.style.width = px.gridsize + 'px';
-        elem.style.height = px.gridsize + 'px';
+        //elem.style.width = px.gridsize + 'px';
+        //elem.style.height = px.gridsize + 'px';
         docFragm.appendChild(elem);
     }
     // resize paper
@@ -131,16 +148,42 @@ function makeGrid(rows, cols) {
     //px.$paper.style.height = px.paperh + 'px';
     px.$paper.appendChild(docFragm);
 }
+*/
+
+// make table grid
+function makeGrid(rows, cols) {
+    var doc = document.createDocumentFragment();
+    var table = document.createElement('table');
+    px.$paper.innerHTML = '';
+
+    for (var r = 0; r < rows; r++) {
+        var tr = document.createElement('tr');
+        for (var c = 0; c < cols; c++) {
+            var td = document.createElement('td');
+            td.style.backgroundColor = px.selected;
+            tr.appendChild(td);
+        }
+        table.appendChild(tr);
+    }
+    doc.appendChild(table);
+
+    // add table and resize
+    px.$paper.appendChild(doc);
+
+    // set width and height and tds height
+    function sizeGrid() {
+        px.$paper.style.width = px.paperw + 'px';
+        px.$paper.style.height = px.paperh + 'px';
+
+        // td height to match
+        px.css.pixels.style.height = px.gridsize + 'px';
+    }
+    sizeGrid();
+}
 
 
 
 function clearGrid() {
-    // redraw grid if not default size
-    // if (px.$pixels.length !== px.baserows * px.basecols) {
-    //     makeGrid(px.baserows, px.basecols);
-    // }
-
-    // loop and color
     for (i = 0, max = px.$pixels.length; i < max; i++) {
         px.$pixels[i].style.backgroundColor = px.selected;
     }
@@ -148,12 +191,6 @@ function clearGrid() {
 
 
 function resetPicker() {
-    // function setSwatch(num, color) {
-    //     console.log( $swatch+num );
-    //     sw = px.$swatch+num;
-    //     sw.style.backgroundColor = color;
-    // }
-    // setSwatch(1,'rgb(231, 136, 136)');
     px.$swatch1.style.backgroundColor = 'rgb(231, 136, 136)';
     px.$swatch2.style.backgroundColor = 'rgb(200, 37, 37)';
     px.$swatch3.style.backgroundColor = '#0a7de8';
@@ -181,8 +218,6 @@ function makeSwatches(s, l) {
     for (var i = 0; i < 360; i += 2) {
         elem = document.createElement('li');
         elem.style.background = 'hsl(' + i + ', ' + s + '%, ' + l + '%)';
-        //elem.style.width = px.gridsize + 'px';
-        //elem.style.height = px.gridsize + 'px';
         docFragm.appendChild(elem);
     }
     px.$swatches.appendChild(docFragm);
@@ -196,12 +231,16 @@ jQuery(function(){
 
     // grid setup/calc heights
     px.margins = $('#tools').css('margin-right').replace('px', '');
-    px.paperw = window.innerWidth - $('#tools').width() - (px.margins * 3);
-    px.paperh = window.innerHeight - $('header')[0].offsetHeight - (px.margins * 3); // 3 is a magic number
+    px.paperw = window.innerWidth - px.$tools.offsetWidth - (px.margins * 3);
+    px.paperh = window.innerHeight - px.$header.offsetHeight - (px.margins * 3); // 3 is a magic number
     px.cols = Math.floor(px.paperw / px.gridsize);
     px.rows = Math.floor(px.paperh / px.gridsize);
     px.basecols = px.cols;
     px.baserows = px.rows;
+
+    // setup min/max grid sliders
+    //px.$gridsizer.max = Math.floor(px.paperw / 4); // [do] make % of screen width
+    //px.$gridsizer.min = Math.floor(px.paperw / 13); // [do] make % of screen width
 
     // console log grid debug info
     function gridInfo() {
@@ -223,26 +262,25 @@ jQuery(function(){
     // show grid info for debugging/testing
     gridInfo();
 
-
-
     // let's draw!
-    makeGrid(px.rows, px.cols, 'w');
+    makeGrid(px.rows, px.cols);
+    px.selected = '#eee';
 
         // drawing touch events
         $("#paper").hammer({prevent_default: true})
-            .on("touch","li", function(e) {
+            .on("touch","td", function(e) {
                 this.style.backgroundColor = px.selected;
             })
-            .on("doubletap","li", function(e) {
+            .on("doubletap","td", function(e) {
                 //console.log('dtap');
             })
-            .on("dragstart","li", function(e) {
+            .on("dragstart","td", function(e) {
                 this.style.backgroundColor = px.selected;
             })
-            .on("drag","li", function(e) {
-                var li = document.elementFromPoint(event.pageX, event.pageY);
-                if (li.localName === 'li' && li.parentElement.id === 'paper') {
-                    li.style.backgroundColor = px.selected;
+            .on("drag","td", function(e) {
+                var td = document.elementFromPoint(event.pageX, event.pageY);
+                if (td.localName === 'td') {
+                    td.style.backgroundColor = px.selected;
                 }
         });
 
@@ -401,6 +439,7 @@ jQuery(function(){
     });
 
     // new
+    px.$bnew.style.backgroundColor = px.selected;
     $('#new').click(function () {
         clearGrid();
         px.$nav.classList.toggle('closed');
@@ -412,25 +451,21 @@ jQuery(function(){
         px.$nav.classList.add('closed');
     });
 
+    // toggle grid lines
+    $('#gridlines').click(function () {
+        //$('body').toggleClass('lightsout');
+        px.$paper.classList.toggle('gridlines');
+    });
+
+
+
     // grid resize
     document.getElementById('size').onchange = function (e) {
-        px.gridsize = e.target.value;
-        /*
-        for (i = 0, max = px.$pixels.length; i < max; i++) {
-            px.$pixels[i].style.width = px.gridsize + 'px';
-            px.$pixels[i].style.height = px.gridsize + 'px';
-        }
-        */
-        // for (i = 0, max = px.$swatchpixels.length; i < max; i++) {
-        //     px.$swatchpixels[i].style.width = px.gridsize + 'px';
-        //     px.$swatchpixels[i].style.height = px.gridsize + 'px';
-        // }
-
-        px.cols = Math.floor(px.paperw / px.gridsize);
+        px.cols = e.target.value;
+        px.gridsize = px.paperw / px.cols;
         px.rows = Math.floor(px.paperh / px.gridsize);
 
-        makeGrid(px.cols,px.rows);
-
+        makeGrid(px.rows,px.cols);
     };
 
     
@@ -462,9 +497,7 @@ jQuery(function(){
 
     // load box setup
     update_save_list();
-    // set loadbox height based on screen
-    $('#loadbox').height( window.innerHeight - px.$header.offsetHeight ); // consider 100% height load window
-
+    
     // load drawings
     $("#loadbox")
         .on("click", "span", function(){
@@ -484,7 +517,7 @@ jQuery(function(){
 
 
 
-});
+}); //$()
 
 
 
@@ -578,6 +611,7 @@ function update_save_list() {
         px.$saved.innerHTML = html;
     } else {
         px.$buttonload.classList.add('hide');
+        px.$loadbox.classList.add('closed');
     }
 }
 
