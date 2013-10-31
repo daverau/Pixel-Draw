@@ -2,91 +2,109 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="format-detection" content="telephone=no" />
-    <meta name="viewport" id="vp" content="initial-scale=1.0,user-scalable=no,maximum-scale=1,width=device-width" />
-    <meta name="viewport" id="vp" content="initial-scale=1.0,user-scalable=no,maximum-scale=1" media="(device-height: 568px)" /> 
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
     <link rel="stylesheet" type="text/css" href="css/index.css" />
     <title>Pixel Draw</title>
 </head>
-<body>
+<body id="thebody">
 
-<header id="header">
-    <h1>Pixel Draw</h1>
-</header>
-<nav id="nav" class="closed hide">
-    <ul class="buttons">
-        <li id="new" class="lg">new</li>
-        <li id="lightsout">dark</li>
-        <li id="gridlines">lines</li>
-        <li><input type="range" id="size" value="13" min="3" max="25" /></li>
-    </ul>
-</nav>
+<div id="app-wrap">
 
-<div id="loadbox" class="load box closed scroll hide">
-    <ol id="saved"></ol>
-</div>
+    <header id="header" class="hide">
+        <h1>Pixel Draw</h1>
+    </header>
 
-<div id="colorbox" class="box closed hide">
-    <ol id="swatches" class="group"></ol>
-    <p>saturation <input type="range" id="s" value="40" max="50" /></p>
-    <p>lightness <input type="range" id="l" value="35" max="50" /></p>
-</div>
-
-<div class="workspace">
-    <div id="tools">
-        <ul id="picker" class="color_lg" draggable="true">
-            <li class="r" id="swatch1"></li>
-            <li class="rd" id="swatch2"></li>
-     
-            <li class="bl" id="swatch3"></li>
-            <li class="bd" id="swatch4"></li>
-
-            <li class="gr" id="swatch5"></li>
-            <li class="gd" id="swatch6"></li>
-
-            <li class="y" id="swatch7"></li>
-            <li class="yd" id="swatch8"></li>
-
-            <li class="o" id="swatch9"></li>
-            <li class="od" id="swatch10"></li>
-
-            <li class="p" id="swatch11"></li>
-            <li class="td" id="swatch12"></li>
-
-
-            <li class="w" id="swatch13"></li>
-            <li class="lg" id="swatch14"></li>
-            <li class="g" id="swatch15"></li>
-            <li class="b" id="swatch16"></li>
-        </ul>
-
+    <nav id="nav" class="closed hide">
         <ul class="buttons">
-            <li id="save">s</li>
-            <li id="load" class="hide">l</li>
+            <li id="new" class="lg">Fill</li>
+            <li id="gridlines" class="hide dev">Grid</li>
+            <li id="square" class="hide dev">Square</li>
+            <li id="lightsout">Dark</li>
+            <li id="load" class="hide">Load</li>
+            <li id="save">Save</li>
+            <li id="info">Info</li>
+            <li class="plain pos-rel control-gridsize">
+                <input type="range" id="size" value="13" min="3" max="20" />
+                <span id="label-gridsize"></span>
+            </li>
         </ul>
+    </nav>
 
+    <div id="busy" class="xhide">
+    <table>
+        <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
     </div>
 
-    <div id="paper" class="gridlines"></div>
-</div>
+    <div id="loadbox" class="load box closed scroll hide">
+        <ol id="saved"></ol>
+    </div>
+
+    <div id="aboutbox" class="fullbox box closed scroll hide">
+        <ul>
+            <li class="huge mtop">Pixel Draw</li>
+            <li>by Dave Rau</li>
+            <li class="mtop">Inspired by mosaic tile artwork throughout history and 8-bit graphics from Atari and NES, Pixel Draw is a tiny little app for pushing pixels.</li>
+            <li class="mtop2" id="getsupport"><span class="link blue">Get Support Online</span></li>
+            <li class="mtop2" id="pixelblog"><span class="link blue">Visit the Pixel Blog</span></li>
+            <li class="mtop2 tiny">v0.0.5</li>
+        </ul>
+    </div>
+
+    <div class="workspace" id="workspace">
+
+        <div id="colorbox" class="box closed hide">
+            <ol id="swatches" class="group">
+            </ol>
+            <p>Saturation <input type="range" id="s" value="40" max="50" /></p>
+            <p>Lightness <input type="range" id="l" value="35" max="50" /></p>
+            <p><button id="color-random">Random</button></p>
+        </div>
+
+        <table id="paper" class="gridlines"></table>
+
+        <div id="tools" class="hide">
+            <ul id="picker" style="background-color: #32328F">
+                <li id="swatch13" data-type="swatch" style="background-color: #ffffff"></li>
+                <li id="swatch16" data-type="swatch" style="background-color: #000000"></li>
+
+                <li id="swatch1" data-type="swatch" style="background-color: #F24B4B"></li>
+                <li id="swatch2" data-type="swatch" style="background-color: #C82525"></li>
+
+                <li id="swatch12" data-type="swatch" style="background-color: #912A8E"></li>
+                <li id="swatch11" data-type="swatch" style="background-color: #4DAAC0"></li>
+
+                <li id="swatch3" data-type="swatch" style="background-color: #2F67BC"></li>
+                <li id="swatch4" data-type="swatch" style="background-color: #32328F"></li>
+
+                <li id="swatch10" data-type="swatch" style="background-color: #625DA6"></li>
+                <li id="swatch5" data-type="swatch" style="background-color: #7fd33d"></li>
+
+                <li id="swatch6" data-type="swatch" style="background-color: #397930"></li>
+                <li id="swatch7" data-type="swatch" style="background-color: #F0F075"></li>
+
+                <li id="swatch8" data-type="swatch" style="background-color: #F0D875"></li>
+                <li id="swatch9" data-type="swatch" style="background-color: #EB972D"></li>
+
+                <li id="swatch14" data-type="swatch" style="background-color: #eeeeee"></li>
+                <li id="swatch15" data-type="swatch" style="background-color: #333333"></li>
+
+                <li id="swatchplus" data-type="plus"></li>
+            </ul>
+        </div><!-- tools -->
+    </div><!-- workspace -->
+</div><!-- app-wrap -->
+<canvas id="savespot"></canvas>
 
 
-<script type="text/javascript" src="cordova-2.7.0.js"></script>
-<script type="text/javascript" src="js/jquery-2.0.1.js"></script>
+<script type="text/javascript" src="cordova.js"></script>
 <script type="text/javascript" src="js/underscore-min.js"></script>
-
-<script type="text/javascript" src="js/jquery.hammer.min.js"></script>
-<script type="text/javascript" src="js/fastclick.js"></script>
-
-<script type="text/javascript" src="js/html2canvas.js"></script>
-<script type="text/javascript" src="js/Canvas2ImagePlugin.js"></script>
-
-<script type="text/javascript" src="js/jquery.stylesheet.js"></script>
-
 <script type="text/javascript" src="js/index.js"></script>
 <script type="text/javascript">app.initialize();</script>
 
