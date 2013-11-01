@@ -2,7 +2,7 @@
 
 pixel draw
 by dave rau
-v0.0.5
+v0.0.6
 
 [bugs]
     prevent multi touch color drag
@@ -32,6 +32,7 @@ px.swatching = false;
 px.dragstartX = 0;
 px.dragstartY = 0;
 px.drag = false;
+
 // for local testing setup
 px.testing = false;
 if (window.location.hostname === 'pixeldraw.dev') {
@@ -42,12 +43,10 @@ if (window.location.hostname === 'pixeldraw.dev') {
 px.$body = document.getElementById('thebody');
 px.$busy = document.getElementById('busy');
 px.$paper = document.getElementById('paper');
-px.$savespot = document.getElementById('savespot');
 px.$pixels = px.$paper.getElementsByTagName('td');
+px.$savespot = document.getElementById('savespot');
 px.$loadbox = document.getElementById('loadbox');
 px.$aboutbox = document.getElementById('aboutbox');
-px.$nav = document.getElementById('nav');
-px.$header = document.getElementById('header');
 px.$saved = document.getElementById('saved');
 px.$tools = document.getElementById('tools');
 px.$colorbox = document.getElementById('colorbox');
@@ -58,6 +57,17 @@ px.$bnew = document.getElementById('new');
 px.$buttonsave = document.getElementById('save');
 px.$buttonload = document.getElementById('load');
 px.$gridsizer = document.getElementById('size');
+px.$labelGridsize = document.getElementById('label-gridsize');
+
+px.$header = document.getElementById('header');
+px.$nav = document.getElementById('nav');
+px.$lightsout = document.getElementById('lightsout');
+px.$buttonSquare = document.getElementById('square');
+px.$buttonGridlines = document.getElementById('gridlines');
+
+px.$infobutton = document.getElementById('info');
+px.$button_getsupport = document.getElementById('getsupport');
+px.$button_pixelblog = document.getElementById('pixelblog');
 
 px.$swatches = document.getElementById('swatches');
 px.$swatchpixels = px.$swatches.getElementsByTagName('li');
@@ -77,6 +87,9 @@ px.$swatch13 = document.getElementById('swatch13');
 px.$swatch14 = document.getElementById('swatch14');
 px.$swatch15 = document.getElementById('swatch15');
 px.$swatch16 = document.getElementById('swatch16');
+px.$sliderS = document.getElementById('s');
+px.$sliderL = document.getElementById('l');
+px.$buttonrandomcolor = document.getElementById('color-random');
 
 // ios7 check
 // http://stackoverflow.com/questions/18944110/how-to-detect-mobile-safari-browser-in-ios-7
@@ -87,60 +100,33 @@ if (navigator.userAgent.match(/(iPad|iPhone|iPod touch);.*CPU.*OS 7_\d/i)) {
 // show page elements hidden from initial load
 px.$header.classList.remove('hide');
 px.$nav.classList.remove('hide');
-px.$loadbox.classList.remove('hide');
-px.$colorbox.classList.remove('hide');
-px.$aboutbox.classList.remove('hide');
 px.$tools.classList.remove('hide');
+
 
 // # Grid setup
 // iphone
 px.margins = 8;
 px.gridsize = 27;
+px.cols = Math.floor(px.$paper.clientWidth / px.gridsize);
+px.rows = Math.floor(px.$paper.clientHeight / px.gridsize);
+px.$gridsizer.max = 60;
 // ipad
 if (window.innerWidth >= 600) {
     px.gridsize = 32;
     px.margins = 25;
-    px.$gridsizer.max = 42;
+    px.$gridsizer.max = 90;
 }
 // desktop
 if (window.innerWidth >= 1200) {
     px.gridsize = 75;
+    px.$gridsizer.max = 120;
 }
-// grid setup/calc heights
-function gridSetup() {
-    px.paperw = window.innerWidth - (px.$tools.offsetWidth + (px.margins * 2));
-    px.paperh = window.innerHeight - (px.$header.offsetHeight + (px.margins * 2)); // double for top and bottom
-    px.cols = Math.floor(px.paperw / px.gridsize);
-    px.rows = Math.floor(px.paperh / px.gridsize);
-    px.basecols = px.cols;
-    px.baserows = px.rows;
-}
-gridSetup();
 
 
-// set app-wrap height === window height (hides savebox)
-function setupHeights() {
-    var $appwrap = document.getElementById('app-wrap');
-    $appwrap.style.height = window.innerHeight+'px';
-
-    px.$savespot.width = window.innerWidth;
-    px.$savespot.height = window.innerHeight;
-}
-setupHeights();
-
-// set paper height
-px.$paper.style.height = px.paperh + 'px';
-
-// size same as #paper
-px.$colorbox.style.height = px.$paper.style.height;
-px.$colorbox.style.width = px.$paper.style.width;
-
-
-// make table grid
+// make drawing table grid
 function makeGrid(rows, cols) {
     //console.log( 'makeGrid' );
-    var label = document.getElementById('label-gridsize');
-    label.innerHTML = px.cols + ' x ' + px.rows;
+    px.$labelGridsize.innerHTML = px.cols + ' x ' + px.rows;
 
     var doc = document.createDocumentFragment();
     px.$paper.innerHTML = '';
@@ -160,6 +146,12 @@ function makeGrid(rows, cols) {
     doc = null;
 }
 makeGrid(px.rows, px.cols);
+
+// unhide boxes
+px.$loadbox.classList.remove('hide');
+px.$colorbox.classList.remove('hide');
+px.$aboutbox.classList.remove('hide');
+
 
 // # fill
 function clearGrid() {
@@ -183,7 +175,7 @@ setColor(px.selected, px.$picker);
 // hide last few picker swatches for short screens like iphone 4 and 5
 function setSwatchesCount() {
     var swatch_h = px.$swatch1.offsetHeight;
-    var cnt = Math.floor(px.paperh / swatch_h);
+    var cnt = Math.floor(px.$paper.clientHeight / swatch_h);
     if (cnt < 16) {
         var pickerSwatches = '';
         for (var x=cnt; x<=16; x++) {
@@ -202,7 +194,7 @@ setSwatchesCount();
 
 // # Touch events
 // drawing
-console.log("let's draw!");
+//console.log("let's draw!");
 px.$paper.addEventListener("touchstart", drawStart, false);
 px.$paper.addEventListener("touchmove", drawMove, false);
 function drawStart(e) {
@@ -216,6 +208,7 @@ function drawMove(e) {
             td.style.backgroundColor = px.selected;
         }
     }
+    td = null;
 }
 
 // color picker
@@ -239,6 +232,7 @@ function pickerMove(e) {
             setColor(li.style.backgroundColor, px.$picker);
         }
     }
+    li = null;
 }
 function pickerEnd(e) {
     e.preventDefault();
@@ -296,6 +290,7 @@ function swatchEnd(e) {
         dropli.style.backgroundColor = px.selected;
     }
 
+    dropli = null;
     px.drag = false;
 }
 
@@ -320,8 +315,8 @@ function toggleColorbox(e) {
 
 // # Color swatches for the color box
 var colors = {
-    's': document.getElementById('s').value * 2, // saturation
-    'l': document.getElementById('l').value * 2 // luminosity
+    's': px.$sliderS.value * 2, // saturation
+    'l': px.$sliderL.value * 2 // luminosity
 };
 makeSwatches(colors.s, colors.l);
 
@@ -369,6 +364,7 @@ function headerclick() {
     }
 }
 
+
 // new/fill/clear grid
 px.$bnew.addEventListener("touchstart", bnewclick, false);
 function bnewclick() {
@@ -378,7 +374,6 @@ function bnewclick() {
 }
 
 // info box
-px.$infobutton = document.getElementById('info');
 px.$infobutton.addEventListener("touchstart", infobuttonclick, false);
 function infobuttonclick() {
     px.$body.classList.remove('x');
@@ -389,7 +384,6 @@ function infobuttonclick() {
 }
 
 // toggle dark/light mode (.lightsout)
-px.$lightsout = document.getElementById('lightsout');
 px.$lightsout.addEventListener("touchstart", lightsoutclick, false);
 function lightsoutclick() {
     px.$body.classList.toggle('lightsout');
@@ -401,7 +395,6 @@ function lightsoutclick() {
 }
 
 // toggle square/rectangle
-px.$buttonSquare = document.getElementById('square');
 px.$buttonSquare.addEventListener("touchstart", buttonSquareclick, false);
 function buttonSquareclick() {
     px.$body.classList.toggle('square');
@@ -410,7 +403,6 @@ function buttonSquareclick() {
 }
 
 // toggle grid lines
-px.$buttonGridlines = document.getElementById('gridlines');
 px.$buttonGridlines.addEventListener("touchstart", buttonGridlinesclick, false);
 function buttonGridlinesclick() {
     px.$buttonGridlines.classList = '';
@@ -423,15 +415,15 @@ function buttonGridlinesclick() {
 }
 
 // grid resize
-document.getElementById('size').onchange = function (e) {
+px.$gridsizer.onchange = function (e) {
     px.cols = e.target.value;
-    px.gridsize = px.paperw / px.cols;
-    px.rows = Math.floor(px.paperh / px.gridsize);
+    px.gridsize = px.$paper.clientWidth / px.cols;
+    px.rows = Math.floor(px.$paper.clientHeight / px.gridsize);
     makeGrid(px.rows,px.cols);
 };
 
 // saturation slider
-document.getElementById('s').onchange = function (e) {
+px.$sliderS.onchange = function (e) {
     colors.s = e.target.value * 2;
     for (var i = 0, max = px.$swatchpixels.length; i < max; i++) {
         px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i  * 12) + ', ' + colors.s + '%, ' + colors.l + '%)';
@@ -439,7 +431,7 @@ document.getElementById('s').onchange = function (e) {
 };
 
 // lightness slider
-document.getElementById('l').onchange = function (e) {
+px.$sliderL.onchange = function (e) {
     colors.l = e.target.value * 2;
     for (var i = 0, max = px.$swatchpixels.length; i < max; i++) {
         px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i  * 12) + ', ' + colors.s + '%, ' + colors.l + '%)';
@@ -447,7 +439,6 @@ document.getElementById('l').onchange = function (e) {
 };
 
 // random button
-px.$buttonrandomcolor = document.getElementById('color-random');
 px.$buttonrandomcolor.addEventListener("touchstart", buttonrandomcolorclick, false);
 function buttonrandomcolorclick() {
     function rand(min, max) {
@@ -648,8 +639,7 @@ function loadDrawing(id) {
 
     // update grid size + label
     px.gridsize = drawing.gridsize;
-    var label = document.getElementById('label-gridsize');
-    label.innerHTML = drawing.cols + ' x ' + drawing.rows;
+    px.$labelGridsize.innerHTML = drawing.cols + ' x ' + drawing.rows;
 
     // redraw grid if needed
     if (px.$pixels.length !== drawing.rows * drawing.cols) {
@@ -746,13 +736,6 @@ function deleteDrawing(id) {
         }, 500);
     }, 50);
 
-    // cleanDOM(id, function(){
-    //     cleanId(id, function(){
-    //         console.log('cleandom callback');
-    //         hideBusy();
-    //     });    
-    // });
-
 }
 
 
@@ -762,31 +745,23 @@ function setSquareCanvas() {
     //gridInfo();
 }
 
+
 // external links
-var getsupport = document.getElementById('getsupport');
-getsupport.onclick = function() {
+px.$button_getsupport.addEventListener("touchend", getsupportgo, false);
+function getsupportgo() {
     window.open('http://pixeldrawapp.com/support/', '_system');
-    return false;
-};
-var pixelblog = document.getElementById('pixelblog');
-pixelblog.onclick = function() {
+}
+px.$button_pixelblog.addEventListener("touchend", pixelbloggo, false);
+function pixelbloggo() {
     window.open('http://pixeldrawapp.com/blog/', '_system');
-    return false;
-};
+}
+
 
 // # Debug global app object
 //console.log(px);
 
-console.log('done');
-
 }
 
-
-// # run app for local setup only
-// needed since deviceready is broken after adding device plugins
-if (window.location.hostname === 'pixeldraw.dev') {
-    //goApp();
-}
 
 
 // # Phonegap go

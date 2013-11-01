@@ -7,7 +7,7 @@
     <link rel="stylesheet" type="text/css" href="css/index.css" />
     <title>Pixel Draw</title>
 </head>
-<body id="thebody">
+<body id="thebody" class="">
 
 <div id="app-wrap">
 
@@ -23,23 +23,23 @@
             <li id="lightsout">Dark</li>
             <li id="load" class="hide">Load</li>
             <li id="save">Save</li>
-            <li id="info">Info</li>
             <li class="plain pos-rel control-gridsize">
                 <input type="range" id="size" value="13" min="3" max="20" />
                 <span id="label-gridsize"></span>
-            </li>
+            </li><br />
+            <li id="info">About</li>
         </ul>
     </nav>
 
-    <div id="busy" class="xhide">
-    <table>
-        <tr>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-    </table>
+    <div id="busy" class="">
+        <table>
+            <tr>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
     </div>
 
     <div id="loadbox" class="load box closed scroll hide">
