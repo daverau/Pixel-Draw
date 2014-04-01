@@ -4,22 +4,8 @@ pixel draw
 by dave rau
 v1.1.2
 
-[todo]
-	find css alternative to * { user-select: none }
-	remove migrate in a version or two
-
-[bugs]
-	prevent multi touch color drag
-	prevent drag off screen and back which fills some bg color
-
 */
 
-
-// # Go
-function goApp() {
-
-
-//localforage.clear();
 
 // # Setup
 // px global variable stores all app settings, data objects and dom pointers
@@ -922,48 +908,3 @@ setSwatchesCount();
 // set savespot width/height to full screen
 px.$savespot.width = window.innerWidth;
 px.$savespot.height = window.innerHeight;
-
-// # Debug global app object
-//console.log(px);
-
-}
-
-// # Local go
-if (window.location.hostname === 'pixeldraw.dev') {
-	goApp();
-} else {
-
-	// # Phonegap go
-	var app = {
-		// Application Constructor
-		initialize: function() {
-			this.bindEvents();
-		},
-		// Bind Event Listeners
-		//
-		// Bind any events that are required on startup. Common events are:
-		// 'load', 'deviceready', 'offline', and 'online'.
-		bindEvents: function() {
-			document.addEventListener('deviceready', this.onDeviceReady, false);
-		},
-		// deviceready Event Handler
-		onDeviceReady: function() {
-			app.receivedEvent('deviceready');
-
-			// ios7 check
-			// http://stackoverflow.com/questions/18944110/how-to-detect-mobile-safari-browser-in-ios-7
-			if (navigator.userAgent.match(/(iPad|iPhone|iPod touch);.*CPU.*OS 7_\d/i)) {
-				document.getElementById('thebody').classList.add('ios7');
-			}
-
-			setTimeout(function() {
-				goApp();
-			}, 10);
-
-		},
-		// Update DOM on a Received Event
-		receivedEvent: function(id) {
-			console.log('Received Event: ' + id);
-		}
-	};
-}
