@@ -2,15 +2,15 @@
 
 pixel draw
 by dave rau
-v0.0.6
+v1.1.2
+
+[todo]
+	find css alternative to * { user-select: none }
+	remove migrate in a version or two
 
 [bugs]
-    prevent multi touch color drag
-
-[v2]
-    break up init code with phonegap deviceready
-    square/rectangle grid toggle
-    share on instagram (https://github.com/vstirbu/InstagramPlugin)
+	prevent multi touch color drag
+	prevent drag off screen and back which fills some bg color
 
 */
 
@@ -18,28 +18,44 @@ v0.0.6
 // # Go
 function goApp() {
 
-// # Reset drawing data
-//localStorage.clear();
 
+//localforage.clear();
 
 // # Setup
 // px global variable stores all app settings, data objects and dom pointers
 var px = {};
-px.ids = JSON.parse(localStorage.getItem('pixelDrawings')) || [];
+
+// get pixel drawings if saved
+// also really nice example of localforage call
+localforage.getItem('pixelDrawings', setPxIds);
+function setPxIds(value) {
+	px.ids = value || [];
+}
+
 px.selected = '#32328F';
 px.swatching = false;
 // for color selection & dragging
 px.dragstartX = 0;
 px.dragstartY = 0;
 px.drag = false;
+px.loaded = false;
+
+// options
+localforage.getItem('pixelDraw_options', setPxOptions);
+function setPxOptions(value) {
+	px.options = value || {};
+	// form for artist info
+	px.$artistname.value = px.options.artistname || '';
+	px.$artisturl.value = px.options.artisturl || '';
+}
 
 // for local testing setup
 px.testing = false;
 if (window.location.hostname === 'pixeldraw.dev') {
-    px.testing = true;
+	px.testing = true;
 }
 
-// dom cache
+// # DOM cache
 px.$body = document.getElementById('thebody');
 px.$busy = document.getElementById('busy');
 px.$paper = document.getElementById('paper');
@@ -68,6 +84,7 @@ px.$buttonGridlines = document.getElementById('gridlines');
 px.$infobutton = document.getElementById('info');
 px.$button_getsupport = document.getElementById('getsupport');
 px.$button_pixelblog = document.getElementById('pixelblog');
+px.$button_pixelgallery = document.getElementById('pixelgallery');
 
 px.$swatches = document.getElementById('swatches');
 px.$swatchpixels = px.$swatches.getElementsByTagName('li');
@@ -91,82 +108,62 @@ px.$sliderS = document.getElementById('s');
 px.$sliderL = document.getElementById('l');
 px.$buttonrandomcolor = document.getElementById('color-random');
 
-// ios7 check
-// http://stackoverflow.com/questions/18944110/how-to-detect-mobile-safari-browser-in-ios-7
-if (navigator.userAgent.match(/(iPad|iPhone|iPod touch);.*CPU.*OS 7_\d/i)) {
-    px.$body.classList.add('ios7');
-}
-
 // show page elements hidden from initial load
 px.$header.classList.remove('hide');
 px.$nav.classList.remove('hide');
 px.$tools.classList.remove('hide');
 
-
-// # Grid setup
-// iphone
-px.margins = 8;
-px.gridsize = 27;
-px.cols = Math.floor(px.$paper.clientWidth / px.gridsize);
-px.rows = Math.floor(px.$paper.clientHeight / px.gridsize);
-px.$gridsizer.max = 60;
-// ipad
-if (window.innerWidth >= 600) {
-    px.gridsize = 32;
-    px.margins = 25;
-    px.$gridsizer.max = 90;
-}
-// desktop
-if (window.innerWidth >= 1200) {
-    px.gridsize = 75;
-    px.$gridsizer.max = 120;
-}
-
-
-// make drawing table grid
-function makeGrid(rows, cols) {
-    //console.log( 'makeGrid' );
-    px.$labelGridsize.innerHTML = px.cols + ' x ' + px.rows;
-
-    var doc = document.createDocumentFragment();
-    px.$paper.innerHTML = '';
-
-    for (var r = 0; r < rows; r++) {
-        var tr = document.createElement('tr');
-        for (var c = 0; c < cols; c++) {
-            var td = document.createElement('td');
-            td.dataset.type = 'pixel';
-            tr.appendChild(td);
-        }
-        doc.appendChild(tr);
-    }
-
-    // add table and resize
-    px.$paper.appendChild(doc);
-    doc = null;
-}
-makeGrid(px.rows, px.cols);
+// publish artist info
+px.$artistinfo = document.getElementById('artistinfo');
+px.$artistname = document.getElementById('artistname');
+px.$artisturl = document.getElementById('artisturl');
 
 // unhide boxes
 px.$loadbox.classList.remove('hide');
 px.$colorbox.classList.remove('hide');
 px.$aboutbox.classList.remove('hide');
+px.$artistinfo.classList.remove('hide');
+px.$cardsflip = document.getElementsByClassName('flip');
+
+
+// make drawing table grid
+function makeGrid(rows, cols) {
+	//console.log( 'makeGrid' );
+	var doc = document.createDocumentFragment();
+
+	px.$labelGridsize.innerHTML = px.cols + ' x ' + px.rows;
+	px.$paper.innerHTML = '';
+
+	for (var r = 0; r < rows; r++) {
+		var tr = document.createElement('tr');
+		for (var c = 0; c < cols; c++) {
+			var td = document.createElement('td');
+			td.dataset.type = 'pixel';
+			tr.appendChild(td);
+		}
+		doc.appendChild(tr);
+	}
+
+	// add table and resize
+	px.$paper.appendChild(doc);
+	doc = null;
+}
 
 
 // # fill
 function clearGrid() {
-    //console.log( 'clearGrid' );
-    for (var i = 0, max = px.$pixels.length; i < max; i++) {
-        px.$pixels[i].style.backgroundColor = px.selected;
-    }
+	//console.log( 'clearGrid' );
+	for (var i = 0, max = px.$pixels.length; i < max; i++) {
+		px.$pixels[i].style.backgroundColor = px.selected;
+	}
 }
 
 // change selected color and related elements
 function setColor(color, target) {
-    px.selected = color;
-    px.$picker.style.backgroundColor = px.selected;
-    px.$bnew.style.color = px.selected;
-    target.style.backgroundColor = px.selected;
+	px.selected = color;
+	px.$picker.style.backgroundColor = px.selected;
+	px.$bnew.style.color = px.selected;
+	target.style.backgroundColor = px.selected;
 }
 // set picker color
 setColor(px.selected, px.$picker);
@@ -174,149 +171,147 @@ setColor(px.selected, px.$picker);
 
 // hide last few picker swatches for short screens like iphone 4 and 5
 function setSwatchesCount() {
-    var swatch_h = px.$swatch1.offsetHeight;
-    var cnt = Math.floor(px.$paper.clientHeight / swatch_h);
-    if (cnt < 16) {
-        var pickerSwatches = '';
-        for (var x=cnt; x<=16; x++) {
-            pickerSwatches += '#picker li:nth-child('+x+'),';
-        }
-        // trim last comma
-        var lastpickers = document.querySelectorAll(pickerSwatches.slice(0, - 1));
-        for (var i = 0, max = lastpickers.length; i < max; i++) {
-            lastpickers[i].classList.add('hide');
-        }
-    }
-    px.$picker.classList.remove('hide');
+	var swatch_h = px.$swatch1.offsetHeight;
+	var cnt = Math.floor(px.$paper.clientHeight / swatch_h);
+	if (cnt < 16) {
+		var pickerSwatches = '';
+		for (var x=cnt; x<=16; x++) {
+			pickerSwatches += '#picker li:nth-child('+x+'),';
+		}
+		// trim last comma
+		var lastpickers = document.querySelectorAll(pickerSwatches.slice(0, - 1));
+		for (var i = 0, max = lastpickers.length; i < max; i++) {
+			lastpickers[i].classList.add('hide');
+		}
+	}
+	px.$picker.classList.remove('hide');
 }
-setSwatchesCount();
 
 
 // # Touch events
 // drawing
-//console.log("let's draw!");
-px.$paper.addEventListener("touchstart", drawStart, false);
-px.$paper.addEventListener("touchmove", drawMove, false);
+px.$paper.addEventListener('touchstart', drawStart, false);
+px.$paper.addEventListener('touchmove', drawMove, false);
 function drawStart(e) {
-    e.preventDefault();
-    e.target.style.backgroundColor = px.selected;
+	e.preventDefault();
+	e.target.style.backgroundColor = px.selected;
 }
 function drawMove(e) {
-    var td = document.elementFromPoint(e.targetTouches[0].pageX, e.targetTouches[0].pageY);
-    if (td) {
-        if (td.localName === 'td' && td.dataset.type == 'pixel') {
-            td.style.backgroundColor = px.selected;
-        }
-    }
-    td = null;
+	var td = document.elementFromPoint(e.targetTouches[0].pageX, e.targetTouches[0].pageY);
+	if (td) {
+		if (td.localName === 'td' && td.dataset.type == 'pixel') {
+			td.style.backgroundColor = px.selected;
+		}
+	}
+	td = null;
 }
 
 // color picker
-px.$picker.addEventListener("touchstart", pickerStart, false);
-px.$picker.addEventListener("touchmove", pickerMove, false);
-px.$picker.addEventListener("touchend", pickerEnd, false);
+px.$picker.addEventListener('touchstart', pickerStart, false);
+px.$picker.addEventListener('touchmove', pickerMove, false);
+px.$picker.addEventListener('touchend', pickerEnd, false);
 function pickerStart(e) {
-    e.preventDefault();
-    if (e.target.dataset.type == 'swatch') {
-        // color select
-        setColor(e.target.style.backgroundColor, px.$picker);
-    } else if (e.target.dataset.type == 'plus') {
-        toggleColorbox({});
-    }
+	e.preventDefault();
+	if (e.target.dataset.type == 'swatch') {
+		// color select
+		setColor(e.target.style.backgroundColor, px.$picker);
+	} else if (e.target.dataset.type == 'plus') {
+		toggleColorbox({});
+	}
 }
 function pickerMove(e) {
-    var li = document.elementFromPoint(e.targetTouches[0].pageX, e.targetTouches[0].pageY);
-    // is swatch
-    if (li) {
-        if (li.dataset.type == 'swatch' || li.dataset.type == 'pixel') {
-            setColor(li.style.backgroundColor, px.$picker);
-        }
-    }
-    li = null;
+	var li = document.elementFromPoint(e.targetTouches[0].pageX, e.targetTouches[0].pageY);
+	// is swatch
+	if (li) {
+		if (li.dataset.type == 'swatch' || li.dataset.type == 'pixel') {
+			setColor(li.style.backgroundColor, px.$picker);
+		}
+	}
+	li = null;
 }
 function pickerEnd(e) {
-    e.preventDefault();
+	e.preventDefault();
 }
 
 
 // build color swatches
 function makeSwatches(s, l) {
-    //console.log( 'makeSwatches' );
-    var docFragm = document.createDocumentFragment();
-    var elem;
-    px.$swatches.innerHTML = '';
-    for (var i = 0; i < 360; i += 12) {
-        elem = document.createElement('li');
-        elem.style.background = 'hsl(' + i + ', ' + s + '%, ' + l + '%)';
-        elem.dataset.type = 'boxswatch';
-        docFragm.appendChild(elem);
-    }
-    px.$swatches.appendChild(docFragm);
-    docFragm = null;
+	//console.log( 'makeSwatches' );
+	var docFragm = document.createDocumentFragment();
+	var elem;
+	px.$swatches.innerHTML = '';
+	for (var i = 0; i < 360; i += 12) {
+		elem = document.createElement('li');
+		elem.style.background = 'hsl(' + i + ', ' + s + '%, ' + l + '%)';
+		elem.dataset.type = 'boxswatch';
+		docFragm.appendChild(elem);
+	}
+	px.$swatches.appendChild(docFragm);
+	docFragm = null;
 }
 
 
 // swatch drag and drop
-px.$swatches.addEventListener("touchstart", swatchStart, false);
-px.$swatches.addEventListener("touchmove", swatchMove, false);
-px.$swatches.addEventListener("touchend", swatchEnd, false);
+px.$swatches.addEventListener('touchstart', swatchStart, false);
+px.$swatches.addEventListener('touchmove', swatchMove, false);
+px.$swatches.addEventListener('touchend', swatchEnd, false);
 function swatchStart(e) {
-    px.originaltarget = e.target;
-    if (e.target.dataset.type === 'boxswatch') {
-        e.preventDefault();
-        px.selected = px.originaltarget.style.backgroundColor;
-        setColor(px.selected, px.$picker);
-        px.dragstartX = e.targetTouches[0].pageX;
-        px.dragstartY = e.targetTouches[0].pageY;
-        px.originaltarget.classList.add('dragging');
-        px.drag = true;
-    }
+	px.originaltarget = e.target;
+	if (e.target.dataset.type === 'boxswatch') {
+		e.preventDefault();
+		px.selected = px.originaltarget.style.backgroundColor;
+		setColor(px.selected, px.$picker);
+		px.dragstartX = e.targetTouches[0].pageX;
+		px.dragstartY = e.targetTouches[0].pageY;
+		px.originaltarget.classList.add('dragging');
+		px.drag = true;
+	}
 }
 function swatchMove(e) {
-    console.log('move'); // [hack][todo] leave this in for iphone bug? wtf this won't pass apple app store right?
-    var curX = e.targetTouches[0].pageX - px.dragstartX,
-    curY = e.targetTouches[0].pageY - px.dragstartY;
-    px.originaltarget.style.webkitTransform = 'translate(' + curX + 'px, ' + curY + 'px)';
+	console.log('move'); // [hack][todo] leave this in for iphone bug? wtf this won't pass apple app store right?
+	var curX = e.targetTouches[0].pageX - px.dragstartX,
+	curY = e.targetTouches[0].pageY - px.dragstartY;
+	px.originaltarget.style.webkitTransform = 'translate(' + curX + 'px, ' + curY + 'px)';
 }
 function swatchEnd(e) {
-    e.preventDefault();
-    px.originaltarget.style.webkitTransform = 'translate(0)';
-    px.originaltarget.classList.remove('dragging');
-    px.originaltarget = false;
+	e.preventDefault();
+	px.originaltarget.style.webkitTransform = 'translate(0)';
+	px.originaltarget.classList.remove('dragging');
+	px.originaltarget = false;
 
-    // update picker color to dropped color swatch
-    var dropli = document.elementFromPoint(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
-    if (dropli.dataset.type === 'swatch') {
-        dropli.style.backgroundColor = px.selected;
-    }
+	// update picker color to dropped color swatch
+	var dropli = document.elementFromPoint(e.changedTouches[0].pageX, e.changedTouches[0].pageY);
+	if (dropli.dataset.type === 'swatch') {
+		dropli.style.backgroundColor = px.selected;
+	}
 
-    dropli = null;
-    px.drag = false;
+	dropli = null;
+	px.drag = false;
 }
 
 
 // # toggle color box picker
 function toggleColorbox(e) {
-    px.$nav.classList.add('closed');
-    if (!px.swatching) {
-        px.swatching = true;
-        // select this color swatch
-        toggleSelected(e.target, px.$picker);
-        px.$body.classList.add('x');
-    } else {
-        px.swatching = false;
-        // unselect
-        toggleSelected({}, px.$picker);
-        px.$body.classList.remove('x');
-    }
-    px.$colorbox.classList.toggle('closed');
+	px.$nav.classList.add('closed');
+	if (!px.swatching) {
+		px.swatching = true;
+		// select this color swatch
+		toggleSelected(e.target, px.$picker);
+		px.$body.classList.add('x');
+	} else {
+		px.swatching = false;
+		// unselect
+		toggleSelected({}, px.$picker);
+		px.$body.classList.remove('x');
+	}
+	px.$colorbox.classList.toggle('closed');
 }
 
 
 // # Color swatches for the color box
 var colors = {
-    's': px.$sliderS.value * 2, // saturation
-    'l': px.$sliderL.value * 2 // luminosity
+	's': px.$sliderS.value * 2, // saturation
+	'l': px.$sliderL.value * 2 // luminosity
 };
 makeSwatches(colors.s, colors.l);
 
@@ -324,14 +319,14 @@ makeSwatches(colors.s, colors.l);
 // color functions group for setting and selecting colors
 // toggle selected class
 function toggleSelected(elem, parent) {
-    if (parent.getElementsByClassName('selected')[0]) {
-        // unselect first (only) target
-        parent.getElementsByClassName('selected')[0].className = '';
-    }
-    // then select
-    if (elem) {
-        elem.className = 'selected';
-    }
+	if (parent.getElementsByClassName('selected')[0]) {
+		// unselect first (only) target
+		parent.getElementsByClassName('selected')[0].className = '';
+	}
+	// then select
+	if (elem) {
+		elem.className = 'selected';
+	}
 }
 
 
@@ -340,451 +335,635 @@ function toggleSelected(elem, parent) {
 // # Buttons
 
 // header toggle
-px.$header.addEventListener("touchstart", headerclick, false);
+px.$header.addEventListener("touchend", headerclick, false);
 function headerclick() {
-    if (!px.$loadbox.classList.contains('closed')) {
-        // close loadbox
-        px.$loadbox.classList.add('closed');
-        px.$body.classList.remove('x');
-    } else if (!px.$colorbox.classList.contains('closed')) {
-        // close colorbox
-        // set colorbox variables
-        px.swatching = false;
-        // unselect
-        toggleSelected({}, px.$picker);
-
-        px.$colorbox.classList.add('closed');
-        px.$body.classList.remove('x');
-    } else if (!px.$aboutbox.classList.contains('closed')) {
-        px.$aboutbox.classList.add('closed');
-        px.$body.classList.remove('x');
-    } else {
-        // otherwise close nav
-        px.$nav.classList.toggle('closed');
-    }
+	if (!px.$loadbox.classList.contains('closed')) {
+		// close loadbox
+		px.$loadbox.classList.add('closed');
+		px.$body.classList.remove('x');
+		px.$artistinfo.classList.add('closed');
+	} else if (!px.$colorbox.classList.contains('closed')) {
+		// close colorbox
+		// set colorbox variables
+		px.swatching = false;
+		// unselect
+		toggleSelected({}, px.$picker);
+		px.$colorbox.classList.add('closed');
+		px.$body.classList.remove('x');
+	} else if (!px.$aboutbox.classList.contains('closed')) {
+		// about box
+		px.$aboutbox.classList.add('closed');
+		px.$body.classList.remove('x');
+	} else {
+		// otherwise close nav
+		px.$nav.classList.toggle('closed');
+	}
 }
 
 
 // new/fill/clear grid
-px.$bnew.addEventListener("touchstart", bnewclick, false);
+px.$bnew.addEventListener('touchstart', bnewclick, false);
 function bnewclick() {
-    clearGrid();
-    px.$body.classList.remove('x');
-    px.$nav.classList.add('closed');
+	clearGrid();
+	px.$body.classList.remove('x');
+	px.$nav.classList.add('closed');
 }
 
 // info box
-px.$infobutton.addEventListener("touchstart", infobuttonclick, false);
+px.$infobutton.addEventListener('touchstart', infobuttonclick, false);
 function infobuttonclick() {
-    px.$body.classList.remove('x');
-    px.$nav.classList.add('closed');
+	px.$body.classList.remove('x');
+	px.$nav.classList.add('closed');
 
-    px.$aboutbox.classList.remove('closed');
-    px.$body.classList.add('x');
+	px.$aboutbox.classList.remove('closed');
+	px.$body.classList.add('x');
 }
 
 // toggle dark/light mode (.lightsout)
-px.$lightsout.addEventListener("touchstart", lightsoutclick, false);
+px.$lightsout.addEventListener('touchstart', lightsoutclick, false);
 function lightsoutclick() {
-    px.$body.classList.toggle('lightsout');
-    px.$nav.classList.add('closed');
-
-    // button text 'light/dark'
-    var txt = px.$body.classList.contains('lightsout') ? 'Light' : 'Dark';
-    px.$lightsout.innerHTML = txt;
+	px.$nav.classList.add('closed');
+	px.$body.classList.toggle('lightsout');
 }
 
 // toggle square/rectangle
-px.$buttonSquare.addEventListener("touchstart", buttonSquareclick, false);
+px.$buttonSquare.addEventListener('touchstart', buttonSquareclick, false);
 function buttonSquareclick() {
-    px.$body.classList.toggle('square');
-    px.$nav.classList.add('closed');
-    setSquareCanvas();
+	px.$body.classList.toggle('square');
+	px.$nav.classList.add('closed');
+	setSquareCanvas();
 }
 
 // toggle grid lines
-px.$buttonGridlines.addEventListener("touchstart", buttonGridlinesclick, false);
+px.$buttonGridlines.addEventListener('touchstart', buttonGridlinesclick, false);
 function buttonGridlinesclick() {
-    px.$buttonGridlines.classList = '';
-    px.$paper.classList.toggle('gridlines');
-    px.$nav.classList.add('closed');
+	px.$buttonGridlines.classList = '';
+	px.$paper.classList.toggle('gridlines');
+	px.$nav.classList.add('closed');
 
-    // button text 'grid/no grid'
-    var txt = px.$paper.classList.contains('gridlines') ? 'normal' : 'strike';
-    px.$buttonGridlines.classList.add(txt);
+	// button text 'grid/no grid'
+	var txt = px.$paper.classList.contains('gridlines') ? 'normal' : 'strike';
+	px.$buttonGridlines.classList.add(txt);
 }
 
 // grid resize
 px.$gridsizer.onchange = function (e) {
-    px.cols = e.target.value;
-    px.gridsize = px.$paper.clientWidth / px.cols;
-    px.rows = Math.floor(px.$paper.clientHeight / px.gridsize);
-    makeGrid(px.rows,px.cols);
+	px.cols = e.target.value;
+	px.gridsize = px.$paper.clientWidth / px.cols;
+	px.rows = Math.floor(px.$paper.clientHeight / px.gridsize);
+	makeGrid(px.rows,px.cols);
 };
 
 // saturation slider
 px.$sliderS.onchange = function (e) {
-    colors.s = e.target.value * 2;
-    for (var i = 0, max = px.$swatchpixels.length; i < max; i++) {
-        px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i  * 12) + ', ' + colors.s + '%, ' + colors.l + '%)';
-    }
+	colors.s = e.target.value * 2;
+	for (var i = 0, max = px.$swatchpixels.length; i < max; i++) {
+		px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i	* 12) + ', ' + colors.s + '%, ' + colors.l + '%)';
+	}
 };
 
 // lightness slider
 px.$sliderL.onchange = function (e) {
-    colors.l = e.target.value * 2;
-    for (var i = 0, max = px.$swatchpixels.length; i < max; i++) {
-        px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i  * 12) + ', ' + colors.s + '%, ' + colors.l + '%)';
-    }
+	colors.l = e.target.value * 2;
+	for (var i = 0, max = px.$swatchpixels.length; i < max; i++) {
+		px.$swatchpixels[i].style.backgroundColor = 'hsl(' + (i	* 12) + ', ' + colors.s + '%, ' + colors.l + '%)';
+	}
 };
 
 // random button
-px.$buttonrandomcolor.addEventListener("touchstart", buttonrandomcolorclick, false);
+px.$buttonrandomcolor.addEventListener('touchstart', buttonrandomcolorclick, false);
+function buttonrandomcolorclick_swatches() {
+	function get_random_color() {
+		var h = rand(1, 360);
+		var s = rand(0, 100);
+		var l = rand(0, 100);
+		return 'hsl(' + h + ',' + s + '%,' + l + '%)';
+	}
+	for (var i = 1; i < 17; i++) {
+		px['$swatch' + i].style.backgroundColor = get_random_color();
+	}
+}
+// new click action for randomizing saturation and lightness of the pixel pool
 function buttonrandomcolorclick() {
-    function rand(min, max) {
-        return parseInt(Math.random() * (max-min+1), 10) + min;
-    }
-    function get_random_color() {
-        var h = rand(1, 360);
-        var s = rand(0, 100);
-        var l = rand(0, 100);
-        return 'hsl(' + h + ',' + s + '%,' + l + '%)';
-    }
-    for (var i = 1; i < 17; i++) {
-        px['$swatch' + i].style.backgroundColor = get_random_color();
-    }
+	function get_random_color() {
+		var h = rand(1, 360);
+		var s = rand(0, 100);
+		var l = rand(10, 90);
+		return 'hsl(' + h + ',' + s + '%,' + l + '%)';
+	}
+	for (var i = 0, max = px.$swatchpixels.length; i < max; i++) {
+		px.$swatchpixels[i].style.backgroundColor = get_random_color();
+	}
 }
 
 
 // # Save
-// update html load list
-function update_save_list() {
-    if (px.ids.length > 0) {
-        var html = '';
-        px.$buttonload.classList.remove('hide');
-        for (var i = 0, max = _.size(px.ids); i < max; i++) {
-            var key = 'pixelDrawing_' + px.ids[i];
-            var drawing = localStorage.getItem(key);
-            if (drawing) {
-                drawing = JSON.parse(drawing);
-                // add to html
-                if (drawing.id > 0) {
-                    html += getHTMLsaveSnippet(drawing.id,drawing.img);
-                }
-            }
-        }
-        px.$saved.innerHTML = html;
-        html = null;
-    } else {
-        px.$saved.innerHTML = '<li class="nodrawings">No Drawings. <span class="smaller">Go push some pixels!</span><span class="ok" data-js="ok">ok</span></li>';
-        px.$buttonload.classList.add('hide');
-    }
+// load drawings update html loadbox
+function update_loadbox() {
+	if (px.ids.length > 0) {
+		var html = '';
+
+		// async loop to load drawings
+		// http://blog.chaoscollective.org/post/40284901138/webninja-tutorial-asynchronous-for-loops
+		// https://gist.github.com/akumpf/4514343#file-forloop_jquery_callback-js
+		(function(){
+			var i = 0;
+			function forloop(){
+			if ( i<_.size(px.ids) ) {
+				var drawingID = 'pixelDrawing_' + px.ids[i];
+				localforage.getItem(drawingID, function(drawing) {
+					if (drawing) {
+						if (drawing.id > 0) {
+							html += getHTMLsaveSnippet(drawing.id,drawing.img);
+						}
+					}
+					i++;
+					forloop();
+				});
+			} else {
+				//console.log("all done");
+				px.$saved.innerHTML = html;
+				html = null;
+				hideBusy();
+			}
+			}
+			forloop();
+		})();
+
+	} else {
+		px.$saved.innerHTML = '<li class="nodrawings">No Drawings. <span class="smaller">Go push some pixels!</span><span class="ok" data-js="ok">ok</span></li>';
+		hideBusy();
+	}
+	px.loaded = true;
 }
-// load box setup
-update_save_list();
 
 // cheap template save snippet
 function getHTMLsaveSnippet(id,img) {
-    return '<li id="load'+id+'"><span data-id="'+id+'" data-js="flip">' + id +'</span><div id="card'+id+'" class="card" data-id="'+id+'"><p class="front" data-id="'+id+'"><img src="'+img+'" data-id="'+id+'" data-js="load" /></p><p class="back"><b data-id="'+id+'" data-js="delete">delete</b></p></div></li>';
+	return '<li id="load'+id+'"><span data-id="'+id+'" data-js="flip">' + id +'</span><div id="card'+id+'" class="card" data-id="'+id+'"><p class="front" data-id="'+id+'"><img src="'+img+'" data-id="'+id+'" data-js="load" /></p><p class="back"><b data-id="'+id+'" data-js="publish" class="publish">Publish</b><b data-id="'+id+'" data-js="delete" class="delete-drawing">delete</b></p></div></li>';
 }
 
 // save event
-px.$buttonsave.addEventListener("touchstart", buttonsaveclick, false);
+px.$buttonsave.addEventListener('touchstart', buttonsaveclick, false);
 function buttonsaveclick() {
-    px.$nav.classList.add('closed');
-    setTimeout(function() {
-        // first
-        px.$busy.classList.remove('hide');
-        setTimeout(function() {
-            // second
-            saveDrawing();
-            setTimeout(function() {
-                // third
-                showSaveMsg();
-            }, 250);
-        }, 150);
-    }, 50);
+	px.$nav.classList.add('closed');
+	setTimeout(function() {
+		// first
+		px.$busy.classList.remove('hide');
+		setTimeout(function() {
+			// second
+			saveDrawing();
+			setTimeout(function() {
+				// third
+				showSaveMsg();
+			}, 250);
+		}, 100);
+	}, 10);
 }
 
 
 // # Render drawing table as canvas element and return png image data
 function drawCanvasGrid(pixels, rows, cols) {
-    var pixelw = Math.ceil(window.innerWidth / cols),
-    pixelh = Math.ceil(window.innerHeight / rows),
-    savespot = px.$savespot.getContext("2d"),
-    a = 0,
-    offsetw = (((pixelw * cols) - window.innerWidth) / 2),
-    offseth = (((pixelh * rows) - window.innerHeight) / 2);
+	var appw = window.innerWidth,
+	apph = window.innerHeight,
+	pixelw = Math.ceil(appw / cols),
+	pixelh = Math.ceil(apph / rows),
+	a = 0,
+	offsetw = (((pixelw * cols) - appw) / 2),
+	offseth = (((pixelh * rows) - apph) / 2);
 
-    // loop over rows, then columns and draw each pixel to the canvas
-    for (var x = 0; x < rows; x++) {
-        for (var y = 0; y < cols; y++) {
-            savespot.fillStyle = pixels[a] || document.defaultView.getComputedStyle(px.$body,null)['background-color'];
-            savespot.fillRect(((y * pixelw) - offsetw), ((pixelh * x) - offseth), pixelw, pixelh);
-            a++;
-        }
-    }
-    return px.$savespot.toDataURL("image/png");
+	var savespot = px.$savespot.getContext('2d');
+
+	// loop over rows, then columns and draw each pixel to the canvas
+	var bgcolor = document.defaultView.getComputedStyle(px.$body,null)['background-color'];
+	for (var x = 0; x < rows; x++) {
+		for (var y = 0; y < cols; y++) {
+			savespot.fillStyle = pixels[a] || bgcolor;
+			savespot.fillRect(((y * pixelw) - offsetw), ((pixelh * x) - offseth), pixelw, pixelh);
+			a++;
+		}
+	}
+	return px.$savespot.toDataURL('image/png');
 }
 
 
-// save drawings to localstorage
+// save drawings
 function saveDrawing() {
-    // get id
-    var id = 1;
-    if (_.max(px.ids) + 1 > 0) {
-        id = _.max(px.ids) + 1;
-    }
+	// get id
+	var id = 1;
+	if (_.max(px.ids) + 1 > 0) {
+		id = _.max(px.ids) + 1;
+	}
 
-    // get actual rows and cols
-    px.rows = px.$paper.rows.length;
-    px.cols = px.$paper.rows[0].cells.length;
+	// get actual rows and cols
+	px.rows = px.$paper.rows.length;
+	px.cols = px.$paper.rows[0].cells.length;
 
-    var drawing = {
-        'id': id,
-        'colorindex': [],
-        'colors': [],
-        'swatches': [],
-        'rows': px.rows,
-        'cols': px.cols,
-        'gridsize': px.gridsize,
-        'img': null,
-        'date': new Date()
-    };
+	var drawing = {
+		'id': id,
+		'colorindex': [],
+		'colors': [],
+		'swatches': [],
+		'rows': px.rows,
+		'cols': px.cols,
+		'gridsize': px.gridsize,
+		'img': null,
+		'date': new Date()
+	};
 
-    // colors array of pixels in drawing
-    for (var i = 0, max = px.$pixels.length; i < max; i++) {
-        //var c = px.$pixels[i].style.backgroundColor;
-        drawing.colors.push( px.$pixels[i].style.backgroundColor );
-    }
-    drawing.colorindex = _.uniq(drawing.colors);
+	// colors array of pixels in drawing
+	for (var i = 0, max = px.$pixels.length; i < max; i++) {
+		//var c = px.$pixels[i].style.backgroundColor;
+		drawing.colors.push( px.$pixels[i].style.backgroundColor );
+	}
+	drawing.colorindex = _.uniq(drawing.colors);
 
-    // translate pixels to canvas element get image data
-    drawing.img = drawCanvasGrid(drawing.colors, px.rows, px.cols);
+	// translate pixels to canvas element get image data
+	drawing.img = drawCanvasGrid(drawing.colors, px.rows, px.cols);
 
-    // compress colors
-    var compressed = [];
-    for (var j = 0, jmax = drawing.colors.length; j < jmax; j++) {
-        //var cid = drawing.colors[j];
-        compressed.push(drawing.colorindex.indexOf( drawing.colors[j] ));
-    }
-    drawing.colors = compressed;
+	// compress colors
+	var compressed = [];
+	for (var j = 0, jmax = drawing.colors.length; j < jmax; j++) {
+		//var cid = drawing.colors[j];
+		compressed.push(drawing.colorindex.indexOf( drawing.colors[j] ));
+	}
+	drawing.colors = compressed;
 
-    // swatch colors from picker
-    for (var k = 1; k < 17; k++) {
-        drawing.swatches.push( px['$swatch' + k].style.backgroundColor );
-    }
+	// swatch colors from picker
+	for (var k = 1; k < 17; k++) {
+		drawing.swatches.push( px['$swatch' + k].style.backgroundColor );
+	}
 
-    // update ids
-    px.ids.push(drawing.id);
+	// update ids
+	px.ids.push(drawing.id);
 
-    // save to localstorage
-    localStorage.setItem('pixelDrawings', JSON.stringify(px.ids));
-    localStorage.setItem('pixelDrawing_' + (drawing.id), JSON.stringify(drawing));    
+	localforage.setItem('pixelDrawings', px.ids).then(localforage.setItem('pixelDrawing_' + (drawing.id), drawing).then(updateAfterSave));
+	;
+	// save to camera roll
+	function updateAfterSave(value) {
+		// update html load box
+		px.$saved.getElementsByClassName('nodrawings')[0].classList.add('hide');
+		px.$saved.innerHTML += getHTMLsaveSnippet(drawing.id, drawing.img);
 
-    // to camera roll/library via phonegap plugin
-    // https://github.com/devgeeks/Canvas2ImagePlugin
-    saveToCameraRoll(drawing.img);
-
-    // update html load box
-    px.$saved.innerHTML += getHTMLsaveSnippet(drawing.id, drawing.img);
+		// to camera roll/library via phonegap plugin
+		// https://github.com/devgeeks/Canvas2ImagePlugin
+		saveToCameraRoll();
+	}
 }
-function saveToCameraRoll(imgData) {
-    // save to photo library/camera roll
-    if (typeof canvas2ImagePlugin !== 'undefined') {
-        canvas2ImagePlugin.saveImageDataToLibrary(
-        function(msg) {
-            console.log(msg);
-        }, function(err) {
-            console.log(err);
-        }, imgData);
-    }
+
+// save to photo library/camera roll
+function saveToCameraRoll() {
+	if (typeof canvas2ImagePlugin !== 'undefined') {
+		canvas2ImagePlugin.saveImageDataToLibrary(
+		function(msg) {
+			//console.log(msg);
+		}, function(err) {
+			//console.log(err);
+		}, 'savespot');
+	}
 }
 
 // show save dialogue
 function showSaveMsg() {
-        closeBusy();
-    function closeBusy() {
-        px.$busy.classList.add('hide');
-    }
-    if (px.testing) {
-        alert('Nice save');
-    } else {
-        navigator.notification.alert(
-            '',  // message
-            null,         // callback
-            'Nice Save',            // title
-            'Done'                  // buttonName
-        );
-    }
+		closeBusy();
+	function closeBusy() {
+		px.$busy.classList.add('hide');
+	}
+	showMsg('Nice Save');
 }
 
 
 // # Load
 // load button
-px.$buttonload.addEventListener("touchstart", buttonloadclick, false);
+px.$buttonload.addEventListener('touchstart', buttonloadclick, false);
 function buttonloadclick() {
-    px.$nav.classList.add('closed');
-    px.$colorbox.classList.add('closed');
-    // open er up
-    px.$loadbox.classList.remove('closed');
-    px.$body.classList.add('x');
+
+	// close others
+	px.$nav.classList.add('closed');
+	px.$colorbox.classList.add('closed');
+
+	toggleArtistinfo();
+
+	// open load box
+	px.$loadbox.classList.remove('closed');
+	px.$body.classList.add('x');
+
+	// show busy indicator first time loading
+	if (!px.loaded) {
+
+		// todo: remove this in the next version or two...
+		migrateData();
+
+		setTimeout(function() {
+			px.$busy.classList.remove('hide');
+			setTimeout(function() {
+				// load box setup
+				update_loadbox();
+			}, 20);
+		}, 10);
+	}
+}
+
+// migrate old localstorage data to localforage
+function migrateData() {
+	var ids = JSON.parse(window.localStorage.getItem('pixelDrawings'));
+	if (ids) {
+		if (ids.length > 0) {
+			localforage.setItem('pixelDrawings', ids);
+			var html = '';
+			for (var i = 0, max = _.size(ids); i < max; i++) {
+				var key = 'pixelDrawing_' + ids[i];
+				var drawing = window.localStorage.getItem(key);
+				if (drawing) {
+					drawing = JSON.parse(drawing);
+					// save to localforage...
+					localforage.setItem('pixelDrawing_' + (drawing.id), drawing);
+				}
+			}
+			window.localStorage.clear();
+		}
+	}
 }
 
 
 // load a drawing to paper, grid sized, and picker colors set
 function loadDrawing(id) {
-    // look up drawing localStorage item with id
-    var drawing = JSON.parse(localStorage.getItem('pixelDrawing_' + id));
+	// look up drawing with id	
+	localforage.getItem('pixelDrawing_' + id, function(drawing){
 
-    // update grid size + label
-    px.gridsize = drawing.gridsize;
-    px.$labelGridsize.innerHTML = drawing.cols + ' x ' + drawing.rows;
+		// update grid size + label
+		px.gridsize = drawing.gridsize;
+		px.$labelGridsize.innerHTML = drawing.cols + ' x ' + drawing.rows;
 
-    // redraw grid if needed
-    if (px.$pixels.length !== drawing.rows * drawing.cols) {
-        makeGrid(drawing.rows, drawing.cols);
-    }
+		// redraw grid if needed
+		if (px.$pixels.length !== drawing.rows * drawing.cols) {
+			makeGrid(drawing.rows, drawing.cols);
+		}
 
-    // load color data
-    for (var i = 0, max = px.$pixels.length; i < max; i++) {
-        px.$pixels[i].style.backgroundColor = drawing.colorindex[drawing.colors[i]];
-    }
+		// load color data
+		for (var i = 0, max = px.$pixels.length; i < max; i++) {
+			px.$pixels[i].style.backgroundColor = drawing.colorindex[drawing.colors[i]];
+		}
 
-    // load picker colors
-    for (var j = 1; j < 17; j++) {
-        px['$swatch' + j].style.backgroundColor = drawing.swatches[j];
-    }
+		// load picker colors
+		for (var j = 1; j < 17; j++) {
+			px['$swatch' + j].style.backgroundColor = drawing.swatches[j];
+		}
+	});
+
 }
 
 
 // load drawing click events
-px.$loadbox.addEventListener("touchstart", loadboxstart, false);
-px.$loadbox.addEventListener("touchmove", loadboxdrag, false);
-px.$loadbox.addEventListener("touchend", loadboxclick, false);
+px.$loadbox.addEventListener('touchstart', loadboxstart, false);
+px.$loadbox.addEventListener('touchmove', loadboxdrag, false);
+px.$loadbox.addEventListener('touchend', loadboxclick, false);
 function loadboxstart() {
-    px.drag = false;
+	px.drag = false;
 }
 function loadboxdrag() {
-    px.drag = true;
+	px.drag = true;
 }
 function loadboxclick(e) {
-    if (e.target.dataset.id && !px.drag) {
-        var id = e.target.dataset.id;
-        function showBusy(callback) {
-            //console.log('showBusy');
-            px.$busy.classList.remove('hide');
-            callback();
-        }
-        if (e.target.dataset.js === 'delete') {
-            // delete
-            showBusy(function(){
-                //console.log('anon function inside showBusy');
-                deleteDrawing(id);
-            });
-        } else if (e.target.dataset.js === 'flip') {
-            // toggle flip
-            document.getElementById('card'+id).classList.toggle('flip');
-        } else if (e.target.dataset.js === 'load') {
-            // load
-            loadDrawing(id);
-            px.$body.classList.remove('x');
-            px.$loadbox.classList.add('closed');
-        }
-    } else if (e.target.dataset.js === 'ok') {
-        // .ok
-        px.$body.classList.remove('x');
-        px.$loadbox.classList.add('closed');
-    }  
-    px.drag = false; 
+	if (e.target.dataset.id && !px.drag) {
+		var id = e.target.dataset.id;
+		function showBusy(callback) {
+			//console.log('showBusy');
+			px.$busy.classList.remove('hide');
+			callback();
+		}
+		if (e.target.dataset.js === 'delete') {
+			// delete
+			showBusy(function(){
+				//console.log('anon function inside showBusy');
+				deleteDrawing(id);
+			});
+		} else if (e.target.dataset.js === 'publish') {
+			showBusy(function(){
+				publishDrawing(id);
+			});
+		} else if (e.target.dataset.js === 'flip') {
+			// toggle flip
+			document.getElementById('card'+id).classList.toggle('flip');
+			toggleArtistinfo();
+		} else if (e.target.dataset.js === 'load') {
+			// load
+			loadDrawing(id);
+			px.$body.classList.remove('x');
+			px.$loadbox.classList.add('closed');
+			toggleArtistinfo();
+		}
+	} else if (e.target.dataset.js === 'ok') {
+		// .ok
+		px.$body.classList.remove('x');
+		px.$loadbox.classList.add('closed');
+		toggleArtistinfo();
+	}	
+	px.drag = false; 
+}
+
+// toggle artist info based on flipped cards
+function toggleArtistinfo() {
+	if (px.$cardsflip.length) {
+		px.$artistinfo.classList.remove('closed');
+	} else {
+		px.$artistinfo.classList.add('closed');
+	}
+}
+
+// # Delete
+// remove drawing
+function deleteDrawing(id) {
+	//console.log('deleteDrawing');
+	id = parseInt(id);
+
+	px.ids = _.without(px.ids, id);
+	localforage.removeItem('pixelDrawing_' + id, function(){
+		document.getElementById('load'+id).outerHTML = '';
+		toggleArtistinfo();
+		localforage.setItem('pixelDrawings', px.ids, function(){
+			if (px.ids.length < 1) {
+				update_loadbox();
+			}
+			hideBusy();
+		});
+	});
+
+}
+// helpers
+function hideBusy() {
+	px.$busy.classList.add('hide');
+}
+// basic randomize
+function rand(min, max) {
+	return parseInt(Math.random() * (max-min+1), 10) + min;
+}
+function showMsg(txt) {
+	if (px.testing) {
+		alert(txt);
+	} else {
+		navigator.notification.alert(
+			'',	// message
+			null,		// callback
+			txt,			 // title
+			'Done'				// buttonName
+		);
+	}
 }
 
 
-// # Delete
-// remove drawing from localstorage
-function deleteDrawing(id) {
-    //console.log('deleteDrawing');
-    id = parseInt(id);
+// # Publish
+// send drawing data to the parse.com api
+function publishDrawing(id) {
+	// load parse api to publish drawings
+	Parse.initialize("FHBykcCPOXwIHcTo7YvPSuzIfB4JnUB1JUcGYcy4", "ljKpykN7JaZoVt5uqDP4ns2B3HRftMHAwZc4ob9N");
 
-    function cleanId(id) {
-        px.ids = _.without(px.ids, id);
-        localStorage.removeItem('pixelDrawing_' + id);
-        localStorage.setItem('pixelDrawings', JSON.stringify(px.ids));
-        if (px.ids.length < 1) {
-            update_save_list();
-        }
-    }
+	id = parseInt(id);
 
-    function cleanDOM(id){
-        // remove single drawing
-        document.getElementById('load'+id).outerHTML = '';
-        //deleteli.classList.add('hide');
-    }
+	// look up drawing with id
+	localforage.getItem('pixelDrawing_' + id, function(d){
 
-    function hideBusy() {
-        px.$busy.classList.add('hide');
-    }
+		var saveObject = Parse.Object.extend("drawing");
+		var drawing = new saveObject();
+		
+		drawing.set('artistname', px.options.artistname);
+		drawing.set('artisturl', px.options.artisturl);
+		drawing.set('gridsize', parseInt(d.gridsize));
+		drawing.set('cols', parseInt(d.cols));
+		drawing.set('rows', parseInt(d.rows));
+		drawing.set('colorindex', d.colorindex);
+		drawing.set('colors', d.colors);
+		drawing.set('swatches', d.swatches);
+		drawing.set('img', d.img);
 
-    // hacky set timeout chain for dom updates
-    setTimeout(function() {
-        // first
-        cleanDOM(id);
-        cleanId(id);
-        setTimeout(function() {
-            // second
-            hideBusy();
-        }, 500);
-    }, 50);
+		drawing.save(null, {
+			success: function (ob) {
+				hideBusy();
+				// hide other stuff
+				document.getElementById('card'+id).classList.toggle('flip');
+				toggleArtistinfo();
+				showMsg('Thanks for sharing!');
+				//console.log("Save ok");
+			},
+			error: function (ob, error) {
+				hideBusy();
+				// hide other stuff
+				document.getElementById('card'+id).classList.toggle('flip');
+				toggleArtistinfo();
+				showMsg('Problems; no Internet?');
+				//console.log(error);
+			}
+		});
+
+	});
 
 }
 
 
 // set square canvas
 function setSquareCanvas() {
-    px.$paper.style.height = px.$paper.offsetWidth;
-    //gridInfo();
+	px.$paper.style.height = px.$paper.offsetWidth;
+	//gridInfo();
 }
 
 
 // external links
-px.$button_getsupport.addEventListener("touchend", getsupportgo, false);
+px.$button_getsupport.addEventListener('touchend', getsupportgo, false);
 function getsupportgo() {
-    window.open('http://pixeldrawapp.com/support/', '_system');
+	window.open('http://pixeldrawapp.com/support/', '_system');
 }
-px.$button_pixelblog.addEventListener("touchend", pixelbloggo, false);
+px.$button_pixelblog.addEventListener('touchend', pixelbloggo, false);
 function pixelbloggo() {
-    window.open('http://pixeldrawapp.com/blog/', '_system');
+	window.open('http://pixeldrawapp.com/blog/', '_system');
+}
+px.$button_pixelgallery.addEventListener('touchend', pixelgallerygo, false);
+function pixelgallerygo() {
+	window.open('http://pixeldrawapp.com/gallery/', '_system');
 }
 
+
+px.$artistname.onchange = function (e) {
+	var val = e.target.value;
+	px.options.artistname = val;
+	localforage.setItem('pixelDraw_options', px.options);
+};
+px.$artisturl.onchange = function (e) {
+	var val = e.target.value;
+	px.options.artisturl = val;
+	localforage.setItem('pixelDraw_options', px.options);
+};
+
+
+// # Run grid setup
+// # Grid setup
+// iphone
+px.margins = 8;
+px.gridsize = 27;
+px.cols = Math.floor(px.$paper.clientWidth / px.gridsize);
+px.rows = Math.floor(px.$paper.clientHeight / px.gridsize);
+//px.$gridsizer.max = 60;
+// ipad
+if (window.innerWidth >= 600) {
+	px.gridsize = 32;
+	px.margins = 25;
+	px.$gridsizer.max = 30;
+}
+// desktop
+if (window.innerWidth >= 1200) {
+	px.gridsize = 75;
+	px.$gridsizer.max = 60;
+}
+
+// make table drawing grid
+makeGrid(px.rows, px.cols);
+
+// hide any picker colors that won't fix on the screen
+setSwatchesCount();
+
+// set savespot width/height to full screen
+px.$savespot.width = window.innerWidth;
+px.$savespot.height = window.innerHeight;
 
 // # Debug global app object
 //console.log(px);
 
 }
 
+// # Local go
+if (window.location.hostname === 'pixeldraw.dev') {
+	goApp();
+} else {
 
+	// # Phonegap go
+	var app = {
+		// Application Constructor
+		initialize: function() {
+			this.bindEvents();
+		},
+		// Bind Event Listeners
+		//
+		// Bind any events that are required on startup. Common events are:
+		// 'load', 'deviceready', 'offline', and 'online'.
+		bindEvents: function() {
+			document.addEventListener('deviceready', this.onDeviceReady, false);
+		},
+		// deviceready Event Handler
+		onDeviceReady: function() {
+			app.receivedEvent('deviceready');
 
-// # Phonegap go
-var app = {
-    // Application Constructor
-    initialize: function() {
-        this.bindEvents();
-    },
-    // Bind Event Listeners
-    //
-    // Bind any events that are required on startup. Common events are:
-    // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
-        document.addEventListener('deviceready', this.onDeviceReady, false);
-    },
-    // deviceready Event Handler
-    onDeviceReady: function() {
-        app.receivedEvent('deviceready');
-        goApp();
-        document.getElementById('busy').classList.add('hide');
-    },
-    // Update DOM on a Received Event
-    receivedEvent: function(id) {
-        console.log('Received Event: ' + id);
-    }
-};
+			// ios7 check
+			// http://stackoverflow.com/questions/18944110/how-to-detect-mobile-safari-browser-in-ios-7
+			if (navigator.userAgent.match(/(iPad|iPhone|iPod touch);.*CPU.*OS 7_\d/i)) {
+				document.getElementById('thebody').classList.add('ios7');
+			}
+
+			setTimeout(function() {
+				goApp();
+			}, 10);
+
+		},
+		// Update DOM on a Received Event
+		receivedEvent: function(id) {
+			console.log('Received Event: ' + id);
+		}
+	};
+}

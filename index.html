@@ -17,21 +17,21 @@
 
     <nav id="nav" class="closed hide">
         <ul class="buttons">
-            <li id="new" class="lg">Fill</li>
             <li id="gridlines" class="hide dev">Grid</li>
             <li id="square" class="hide dev">Square</li>
-            <li id="lightsout">Dark</li>
-            <li id="load" class="hide">Load</li>
+            <li id="new">New</li>
+            <li id="load">Load</li>
             <li id="save">Save</li>
+            <li id="lightsout"></li>
+            <li id="info">Hi</li>
             <li class="plain pos-rel control-gridsize">
-                <input type="range" id="size" value="13" min="3" max="20" />
+                <input type="range" id="size" value="13" min="3" max="15" />
                 <span id="label-gridsize"></span>
-            </li><br />
-            <li id="info">About</li>
+            </li>
         </ul>
     </nav>
 
-    <div id="busy" class="">
+    <div id="busy" class="hide">
         <table>
             <tr>
                 <td></td>
@@ -45,15 +45,21 @@
     <div id="loadbox" class="load box closed scroll hide">
         <ol id="saved"></ol>
     </div>
+    <form class="options-publish closed hide" id="artistinfo">
+        <h4>Publish Info</h4>
+        <input type="text" id="artistname" class="text name" placeholder="Name..." />
+        <input type="email" id="artisturl" class="text email" id="" placeholder="Email or URL..." />
+    </form>
 
     <div id="aboutbox" class="fullbox box closed scroll hide">
         <ul>
             <li class="huge mtop">Pixel Draw</li>
             <li>by Dave Rau</li>
-            <li class="mtop">Inspired by mosaic tile artwork throughout history and 8-bit graphics from Atari and NES, Pixel Draw is a tiny little app for pushing pixels.</li>
+            <li class="mtop">Inspired by mosaic tile artwork throughout history and 8-bit graphics from Atari and Nintendo, Pixel Draw is a tiny little app for pushing pixels.</li>
             <li class="mtop2" id="getsupport"><span class="link blue">Get Support Online</span></li>
             <li class="mtop2" id="pixelblog"><span class="link blue">Visit the Pixel Blog</span></li>
-            <li class="mtop2 tiny">v0.0.5</li>
+            <li class="mtop2" id="pixelgallery"><span class="link blue">View the Web Gallery</span></li>
+            <li class="mtop2 tiny">v1.2</li>
         </ul>
     </div>
 
@@ -105,6 +111,8 @@
 
 <script type="text/javascript" src="cordova.js"></script>
 <script type="text/javascript" src="js/underscore-min.js"></script>
+<script type="text/javascript" src="js/localforage.min.js"></script>
+<script type="text/javascript" src="js/parse-1.2.18.min.js"></script>
 <script type="text/javascript" src="js/index.js"></script>
 <script type="text/javascript">app.initialize();</script>
 
