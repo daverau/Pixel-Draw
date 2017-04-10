@@ -710,7 +710,8 @@ function deleteDrawing(id) {
 	//console.log('deleteDrawing');
 	id = parseInt(id);
 
-	px.ids = _.without(px.ids, id);
+	//px.ids = _.without(px.ids, id);
+	px.ids = px.ids.filter(item => item !== id);
 	//var pos = px.ids.indexOf(id);
 	//px.ids = px.ids.splice(pos, 1);
 
