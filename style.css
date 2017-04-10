@@ -670,6 +670,7 @@ input[type="text"], input[type="email"] {
 #nav li.control-gridsize {
   display: block;
   text-align: center;
+  margin-top: 13px;
   }
 #nav li.control-gridsize * {
   display: inline-block !important;

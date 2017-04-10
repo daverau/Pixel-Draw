@@ -444,7 +444,7 @@ function update_loadbox() {
 		(function(){
 			var i = 0;
 			function forloop(){
-			if ( i<_.size(px.ids) ) {
+			if ( i < Object.keys(px.ids).length ) {
 				var drawingID = 'pixelDrawing_' + px.ids[i];
 				localforage.getItem(drawingID, function(drawing) {
 					if (drawing) {
@@ -477,7 +477,9 @@ function getHTMLsaveSnippet(id,img) {
 	return '<li id="load'+id+'"><span data-id="'+id+'" data-js="flip">' + id +'</span><div id="card'+id+'" class="card" data-id="'+id+'"><p class="front" data-id="'+id+'"><img src="'+img+'" data-id="'+id+'" data-js="load" /></p><p class="back"><b data-id="'+id+'" data-js="delete" class="delete-drawing">delete</b></p></div></li>';
 }
 
-// save event
+
+// Save event
+// [todo] make this proper with callbacks/promises
 px.$buttonsave.addEventListener('touchstart', buttonsaveclick, false);
 function buttonsaveclick() {
 	px.$nav.classList.add('closed');
@@ -490,7 +492,7 @@ function buttonsaveclick() {
 			setTimeout(function() {
 				// third
 				showSaveMsg();
-				update_loadbox();
+				px.loaded = false;
 			}, 250);
 		}, 100);
 	}, 10);
@@ -522,12 +524,12 @@ function drawCanvasGrid(pixels, rows, cols) {
 }
 
 
-// save drawings
+// save single drawing
 function saveDrawing() {
 	// get id
 	var id = 1;
-	if (_.max(px.ids) + 1 > 0) {
-		id = _.max(px.ids) + 1;
+	if (Math.max.apply(null, px.ids) + 1 > 0) {
+		id = Math.max.apply(null, px.ids) + 1;
 	}
 
 	// get actual rows and cols
@@ -551,7 +553,7 @@ function saveDrawing() {
 		//var c = px.$pixels[i].style.backgroundColor;
 		drawing.colors.push( px.$pixels[i].style.backgroundColor );
 	}
-	drawing.colorindex = _.uniq(drawing.colors);
+	drawing.colorindex = [...new Set(drawing.colors)];
 
 	// translate pixels to canvas element get image data
 	drawing.img = drawCanvasGrid(drawing.colors, px.rows, px.cols);
@@ -600,7 +602,7 @@ function saveToCameraRoll() {
 
 // show save dialogue
 function showSaveMsg() {
-		closeBusy();
+	closeBusy();
 	function closeBusy() {
 		px.$busy.classList.add('hide');
 	}
@@ -709,6 +711,9 @@ function deleteDrawing(id) {
 	id = parseInt(id);
 
 	px.ids = _.without(px.ids, id);
+	//var pos = px.ids.indexOf(id);
+	//px.ids = px.ids.splice(pos, 1);
+
 	localforage.removeItem('pixelDrawing_' + id, function(){
 		document.getElementById('load'+id).outerHTML = '';
 		localforage.setItem('pixelDrawings', px.ids, function(){
