@@ -30,9 +30,6 @@ px.loaded = false;
 localforage.getItem('pixelDraw_options', setPxOptions);
 function setPxOptions(value) {
 	px.options = value || {};
-	// form for artist info
-	px.$artistname.value = px.options.artistname || '';
-	px.$artisturl.value = px.options.artisturl || '';
 }
 
 // for local testing setup
@@ -70,7 +67,6 @@ px.$buttonGridlines = document.getElementById('gridlines');
 px.$infobutton = document.getElementById('info');
 px.$button_getsupport = document.getElementById('getsupport');
 px.$button_pixelblog = document.getElementById('pixelblog');
-px.$button_pixelgallery = document.getElementById('pixelgallery');
 
 px.$swatches = document.getElementById('swatches');
 px.$swatchpixels = px.$swatches.getElementsByTagName('li');
@@ -99,16 +95,10 @@ px.$header.classList.remove('hide');
 px.$nav.classList.remove('hide');
 px.$tools.classList.remove('hide');
 
-// publish artist info
-px.$artistinfo = document.getElementById('artistinfo');
-px.$artistname = document.getElementById('artistname');
-px.$artisturl = document.getElementById('artisturl');
-
 // unhide boxes
 px.$loadbox.classList.remove('hide');
 px.$colorbox.classList.remove('hide');
 px.$aboutbox.classList.remove('hide');
-px.$artistinfo.classList.remove('hide');
 px.$cardsflip = document.getElementsByClassName('flip');
 
 
@@ -327,7 +317,6 @@ function headerclick() {
 		// close loadbox
 		px.$loadbox.classList.add('closed');
 		px.$body.classList.remove('x');
-		px.$artistinfo.classList.add('closed');
 	} else if (!px.$colorbox.classList.contains('closed')) {
 		// close colorbox
 		// set colorbox variables
@@ -485,7 +474,7 @@ function update_loadbox() {
 
 // cheap template save snippet
 function getHTMLsaveSnippet(id,img) {
-	return '<li id="load'+id+'"><span data-id="'+id+'" data-js="flip">' + id +'</span><div id="card'+id+'" class="card" data-id="'+id+'"><p class="front" data-id="'+id+'"><img src="'+img+'" data-id="'+id+'" data-js="load" /></p><p class="back"><b data-id="'+id+'" data-js="publish" class="publish">Publish</b><b data-id="'+id+'" data-js="delete" class="delete-drawing">delete</b></p></div></li>';
+	return '<li id="load'+id+'"><span data-id="'+id+'" data-js="flip">' + id +'</span><div id="card'+id+'" class="card" data-id="'+id+'"><p class="front" data-id="'+id+'"><img src="'+img+'" data-id="'+id+'" data-js="load" /></p><p class="back"><b data-id="'+id+'" data-js="delete" class="delete-drawing">delete</b></p></div></li>';
 }
 
 // save event
@@ -627,17 +616,12 @@ function buttonloadclick() {
 	px.$nav.classList.add('closed');
 	px.$colorbox.classList.add('closed');
 
-	toggleArtistinfo();
-
 	// open load box
 	px.$loadbox.classList.remove('closed');
 	px.$body.classList.add('x');
 
 	// show busy indicator first time loading
 	if (!px.loaded) {
-
-		// todo: remove this in the next version or two...
-		migrateData();
 
 		setTimeout(function() {
 			px.$busy.classList.remove('hide');
@@ -649,31 +633,9 @@ function buttonloadclick() {
 	}
 }
 
-// migrate old localstorage data to localforage
-function migrateData() {
-	var ids = JSON.parse(window.localStorage.getItem('pixelDrawings'));
-	if (ids) {
-		if (ids.length > 0) {
-			localforage.setItem('pixelDrawings', ids);
-			var html = '';
-			for (var i = 0, max = _.size(ids); i < max; i++) {
-				var key = 'pixelDrawing_' + ids[i];
-				var drawing = window.localStorage.getItem(key);
-				if (drawing) {
-					drawing = JSON.parse(drawing);
-					// save to localforage...
-					localforage.setItem('pixelDrawing_' + (drawing.id), drawing);
-				}
-			}
-			window.localStorage.clear();
-		}
-	}
-}
-
-
 // load a drawing to paper, grid sized, and picker colors set
 function loadDrawing(id) {
-	// look up drawing with id	
+	// look up drawing with id
 	localforage.getItem('pixelDrawing_' + id, function(drawing){
 
 		// update grid size + label
@@ -720,40 +682,23 @@ function loadboxclick(e) {
 		if (e.target.dataset.js === 'delete') {
 			// delete
 			showBusy(function(){
-				//console.log('anon function inside showBusy');
 				deleteDrawing(id);
-			});
-		} else if (e.target.dataset.js === 'publish') {
-			showBusy(function(){
-				publishDrawing(id);
 			});
 		} else if (e.target.dataset.js === 'flip') {
 			// toggle flip
 			document.getElementById('card'+id).classList.toggle('flip');
-			toggleArtistinfo();
 		} else if (e.target.dataset.js === 'load') {
 			// load
 			loadDrawing(id);
 			px.$body.classList.remove('x');
 			px.$loadbox.classList.add('closed');
-			toggleArtistinfo();
 		}
 	} else if (e.target.dataset.js === 'ok') {
 		// .ok
 		px.$body.classList.remove('x');
 		px.$loadbox.classList.add('closed');
-		toggleArtistinfo();
-	}	
-	px.drag = false; 
-}
-
-// toggle artist info based on flipped cards
-function toggleArtistinfo() {
-	if (px.$cardsflip.length) {
-		px.$artistinfo.classList.remove('closed');
-	} else {
-		px.$artistinfo.classList.add('closed');
 	}
+	px.drag = false;
 }
 
 // # Delete
@@ -765,7 +710,6 @@ function deleteDrawing(id) {
 	px.ids = _.without(px.ids, id);
 	localforage.removeItem('pixelDrawing_' + id, function(){
 		document.getElementById('load'+id).outerHTML = '';
-		toggleArtistinfo();
 		localforage.setItem('pixelDrawings', px.ids, function(){
 			if (px.ids.length < 1) {
 				update_loadbox();
@@ -786,62 +730,9 @@ function rand(min, max) {
 function showMsg(txt) {
 	if (px.testing) {
 		alert(txt);
-	} else {
-		navigator.notification.alert(
-			'',	// message
-			null,		// callback
-			txt,			 // title
-			'Done'				// buttonName
-		);
+	} else if (navigator.notification) {
+		navigator.notification.alert('', null, txt, 'Done');
 	}
-}
-
-
-// # Publish
-// send drawing data to the parse.com api
-function publishDrawing(id) {
-	// load parse api to publish drawings
-	Parse.initialize("FHBykcCPOXwIHcTo7YvPSuzIfB4JnUB1JUcGYcy4", "ljKpykN7JaZoVt5uqDP4ns2B3HRftMHAwZc4ob9N");
-
-	id = parseInt(id);
-
-	// look up drawing with id
-	localforage.getItem('pixelDrawing_' + id, function(d){
-
-		var saveObject = Parse.Object.extend("drawing");
-		var drawing = new saveObject();
-		
-		drawing.set('artistname', px.options.artistname);
-		drawing.set('artisturl', px.options.artisturl);
-		drawing.set('gridsize', parseInt(d.gridsize));
-		drawing.set('cols', parseInt(d.cols));
-		drawing.set('rows', parseInt(d.rows));
-		drawing.set('colorindex', d.colorindex);
-		drawing.set('colors', d.colors);
-		drawing.set('swatches', d.swatches);
-		drawing.set('img', d.img);
-
-		drawing.save(null, {
-			success: function (ob) {
-				hideBusy();
-				// hide other stuff
-				document.getElementById('card'+id).classList.toggle('flip');
-				toggleArtistinfo();
-				showMsg('Thanks for sharing!');
-				//console.log("Save ok");
-			},
-			error: function (ob, error) {
-				hideBusy();
-				// hide other stuff
-				document.getElementById('card'+id).classList.toggle('flip');
-				toggleArtistinfo();
-				showMsg('Problems; no Internet?');
-				//console.log(error);
-			}
-		});
-
-	});
-
 }
 
 
@@ -861,22 +752,6 @@ px.$button_pixelblog.addEventListener('touchend', pixelbloggo, false);
 function pixelbloggo() {
 	window.open('http://pixeldrawapp.com/blog/', '_system');
 }
-px.$button_pixelgallery.addEventListener('touchend', pixelgallerygo, false);
-function pixelgallerygo() {
-	window.open('http://pixeldrawapp.com/gallery/', '_system');
-}
-
-
-px.$artistname.onchange = function (e) {
-	var val = e.target.value;
-	px.options.artistname = val;
-	localforage.setItem('pixelDraw_options', px.options);
-};
-px.$artisturl.onchange = function (e) {
-	var val = e.target.value;
-	px.options.artisturl = val;
-	localforage.setItem('pixelDraw_options', px.options);
-};
 
 
 // # Run grid setup

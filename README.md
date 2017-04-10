@@ -14,13 +14,17 @@ Interface in action
 Features
 --------
 
-* doesn't use canvas, I favor HTML/DOM/CSS over 2d coordinate systems, so this uses a table -- semantic blastphamy!
-* saves to localstorage, testing out localForage for speed optimizations on iOS
-* publishes online via parse.com data api
+* No canvas, uses a good old HTML table -- semantic blastphamy!
+* Save to localstorage, testing out localForage for speed optimizations on iOS
+* Publish online via parse.com data api (removed since Parse service shutdown)
 
 Changelog
 ---------
 
+### 1.3.0
+- New color picker with presets
+- Minor code formatting cleanup
+
 ### 1.2.0
-* publish to the online gallery
-* random color picker now randomizes the working area colors, not your saved palette
+- Publish to the online gallery
+- Random color picker now randomizes the working area colors, not your saved palette

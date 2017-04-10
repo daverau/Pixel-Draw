@@ -1,112 +1,107 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <meta name="format-detection" content="telephone=no" />
-    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
-    <link rel="stylesheet" type="text/css" href="style.css" />
-    <link rel="stylesheet" type="text/css" href="style-ipad.css" />
-    <title>Pixel Draw</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" type="text/css" href="style.css" />
+  <link rel="stylesheet" type="text/css" href="style-ipad.css" />
+  <title>Pixel Draw</title>
 </head>
 <body id="thebody">
 
 <div id="app-wrap">
 
-    <header id="header" class="hide">
-        <h1>Pixel Draw</h1>
-    </header>
+  <header id="header" class="hide">
+    <h1>Pixel Draw</h1>
+  </header>
 
-    <nav id="nav" class="closed hide">
-        <ul class="buttons">
-            <li id="gridlines" class="hide dev">Grid</li>
-            <li id="square" class="hide dev">Square</li>
-            <li id="new">New</li>
-            <li id="load">Load</li>
-            <li id="save">Save</li>
-            <li id="lightsout"></li>
-            <li id="info">Hi</li>
-            <li class="plain pos-rel control-gridsize">
-                <input type="range" id="size" value="13" min="3" max="15" />
-                <span id="label-gridsize"></span>
-            </li>
-        </ul>
-    </nav>
+  <nav id="nav" class="closed hide">
+    <ul class="buttons">
+      <li id="gridlines" class="hide dev">Grid</li>
+      <li id="square" class="hide dev">Square</li>
+      <li id="new">New</li>
+      <li id="load">Load</li>
+      <li id="save">Save</li>
+      <li id="lightsout"></li>
+      <li id="info">Hi</li>
+      <li class="plain pos-rel control-gridsize">
+        <input type="range" id="size" value="13" min="3" max="15" />
+        <span id="label-gridsize"></span>
+      </li>
+    </ul>
+  </nav>
 
-    <div id="busy" class="hide">
-        <table>
-            <tr>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
-        </table>
+  <div id="busy" class="hide">
+    <table>
+      <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td></td>
+      </tr>
+    </table>
+  </div>
+
+  <div id="loadbox" class="load box closed scroll hide">
+    <ol id="saved"></ol>
+  </div>
+
+  <div id="aboutbox" class="fullbox box closed scroll hide">
+    <ul>
+      <li class="huge mtop">Pixel Draw</li>
+      <li>by Dave Rau</li>
+      <li class="mtop">Inspired by mosaic tile artwork throughout history and 8-bit graphics from Atari and Nintendo, Pixel Draw is a tiny little app for pushing pixels.</li>
+      <li class="mtop2" id="getsupport"><span class="link blue">Get Support Online</span></li>
+      <li class="mtop2" id="pixelblog"><span class="link blue">Visit the Pixel Blog</span></li>
+      <li class="mtop2" id="pixelgallery"><span class="link blue">View the Web Gallery</span></li>
+      <li class="mtop2 tiny">v1.2</li>
+    </ul>
+  </div>
+
+  <div class="workspace" id="workspace">
+
+    <div id="colorbox" class="box closed hide">
+      <ol id="swatches" class="group">
+      </ol>
+      <p>Saturation <input type="range" id="s" value="40" max="50" /></p>
+      <p>Lightness <input type="range" id="l" value="35" max="50" /></p>
+      <p><button id="color-random">Random</button></p>
     </div>
 
-    <div id="loadbox" class="load box closed scroll hide">
-        <ol id="saved"></ol>
-    </div>
+    <table id="paper" class="gridlines"></table>
 
-    <form class="options-publish closed hide" id="artistinfo">
-        <h4>Publish Info</h4>
-        <input type="text" id="artistname" class="text name" placeholder="Name..." />
-        <input type="email" id="artisturl" class="text email" id="" placeholder="Email or URL..." />
-    </form>
+    <div id="tools" class="hide">
+      <ul id="picker" style="background-color: #32328F">
+        <li id="swatch13" data-type="swatch" style="background-color: #ffffff"></li>
+        <li id="swatch16" data-type="swatch" style="background-color: #000000"></li>
 
-    <div id="aboutbox" class="fullbox box closed scroll hide">
-        <ul>
-            <li class="huge mtop">Pixel Draw</li>
-            <li>by Dave Rau</li>
-            <li class="mtop">Inspired by mosaic tile artwork throughout history and 8-bit graphics from Atari and Nintendo, Pixel Draw is a tiny little app for pushing pixels.</li>
-            <li class="mtop2" id="getsupport"><span class="link blue">Get Support Online</span></li>
-            <li class="mtop2" id="pixelblog"><span class="link blue">Visit the Pixel Blog</span></li>
-            <li class="mtop2" id="pixelgallery"><span class="link blue">View the Web Gallery</span></li>
-            <li class="mtop2 tiny">v1.2</li>
-        </ul>
-    </div>
+        <li id="swatch1" data-type="swatch" style="background-color: #F24B4B"></li>
+        <li id="swatch2" data-type="swatch" style="background-color: #C82525"></li>
 
-    <div class="workspace" id="workspace">
+        <li id="swatch12" data-type="swatch" style="background-color: #912A8E"></li>
+        <li id="swatch11" data-type="swatch" style="background-color: #4DAAC0"></li>
 
-        <div id="colorbox" class="box closed hide">
-            <ol id="swatches" class="group">
-            </ol>
-            <p>Saturation <input type="range" id="s" value="40" max="50" /></p>
-            <p>Lightness <input type="range" id="l" value="35" max="50" /></p>
-            <p><button id="color-random">Random</button></p>
-        </div>
+        <li id="swatch3" data-type="swatch" style="background-color: #2F67BC"></li>
+        <li id="swatch4" data-type="swatch" style="background-color: #32328F"></li>
 
-        <table id="paper" class="gridlines"></table>
+        <li id="swatch10" data-type="swatch" style="background-color: #625DA6"></li>
+        <li id="swatch5" data-type="swatch" style="background-color: #7fd33d"></li>
 
-        <div id="tools" class="hide">
-            <ul id="picker" style="background-color: #32328F">
-                <li id="swatch13" data-type="swatch" style="background-color: #ffffff"></li>
-                <li id="swatch16" data-type="swatch" style="background-color: #000000"></li>
+        <li id="swatch6" data-type="swatch" style="background-color: #397930"></li>
+        <li id="swatch7" data-type="swatch" style="background-color: #F0F075"></li>
 
-                <li id="swatch1" data-type="swatch" style="background-color: #F24B4B"></li>
-                <li id="swatch2" data-type="swatch" style="background-color: #C82525"></li>
+        <li id="swatch8" data-type="swatch" style="background-color: #F0D875"></li>
+        <li id="swatch9" data-type="swatch" style="background-color: #EB972D"></li>
 
-                <li id="swatch12" data-type="swatch" style="background-color: #912A8E"></li>
-                <li id="swatch11" data-type="swatch" style="background-color: #4DAAC0"></li>
+        <li id="swatch14" data-type="swatch" style="background-color: #eeeeee"></li>
+        <li id="swatch15" data-type="swatch" style="background-color: #333333"></li>
 
-                <li id="swatch3" data-type="swatch" style="background-color: #2F67BC"></li>
-                <li id="swatch4" data-type="swatch" style="background-color: #32328F"></li>
-
-                <li id="swatch10" data-type="swatch" style="background-color: #625DA6"></li>
-                <li id="swatch5" data-type="swatch" style="background-color: #7fd33d"></li>
-
-                <li id="swatch6" data-type="swatch" style="background-color: #397930"></li>
-                <li id="swatch7" data-type="swatch" style="background-color: #F0F075"></li>
-
-                <li id="swatch8" data-type="swatch" style="background-color: #F0D875"></li>
-                <li id="swatch9" data-type="swatch" style="background-color: #EB972D"></li>
-
-                <li id="swatch14" data-type="swatch" style="background-color: #eeeeee"></li>
-                <li id="swatch15" data-type="swatch" style="background-color: #333333"></li>
-
-                <li id="swatchplus" data-type="plus"></li>
-            </ul>
-        </div><!-- tools -->
-    </div><!-- workspace -->
+        <li id="swatchplus" data-type="plus"></li>
+      </ul>
+    </div><!-- tools -->
+  </div><!-- workspace -->
 </div><!-- app-wrap -->
 <canvas id="savespot"></canvas>
 

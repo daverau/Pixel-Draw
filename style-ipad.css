@@ -1,94 +1,94 @@
 /* ipad+ */
 @media only screen and (min-width: 480px) {
-    #workspace {
-        margin: 25px 0 0 0;
-        }
-    #tools {
-        width: 75px;
-        margin: 0 25px 0;
-        }
-    #tools .buttons li {
-        width: 70px;
-        height: 70px;
-        line-height: 50px;
-        margin-top: 2em;
-        }
-    #paper {
-        margin: 0 0 0 25px;
-        }
-    #paper, #colorbox {
-        width: calc(100% - 75px - 25px - 25px - 25px);
-        height: calc(100% - 40px - 25px - 25px);
-        }
-    #colorbox {
-        width: calc(100% - 75px - 25px - 25px - 25px);
-        }
+  #workspace {
+    margin: 25px 0 0 0;
+    }
+  #tools {
+    width: 75px;
+    margin: 0 25px 0;
+    }
+  #tools .buttons li {
+    width: 70px;
+    height: 70px;
+    line-height: 50px;
+    margin-top: 2em;
+    }
+  #paper {
+    margin: 0 0 0 25px;
+    }
+  #paper, #colorbox {
+    width: calc(100% - 75px - 25px - 25px - 25px);
+    height: calc(100% - 40px - 25px - 25px);
+    }
+  #colorbox {
+    width: calc(100% - 75px - 25px - 25px - 25px);
+    }
 
-    #picker {
-        overflow: auto;
-        padding: 15px;
-        }
-    #picker li, #swatches li {
-        height: 45px;
-        width: 45px;
-        }
-    #swatches li {
-        width: 20%;
-        height: 75px;
-        }
-    .box {
-        top: 40px;
-        }
-    #saved li {
-        width: 17.8%;
-        height: 220px;
-        }
+  #picker {
+    overflow: auto;
+    padding: 15px;
+    }
+  #picker li, #swatches li {
+    height: 45px;
+    width: 45px;
+    }
+  #swatches li {
+    width: 20%;
+    height: 75px;
+    }
+  .box {
+    top: 40px;
+    }
+  #saved li {
+    width: 17.8%;
+    height: 220px;
+    }
 
-    nav.closed {
-        -webkit-transform: translateY(-160px);
-        transform: translateY(-160px);
-        }
-    #colorbox {
-        top: 65px;
-        left: 25px;
-        }
-    #colorbox p:first-child {
-        padding: 25px 0 6px;
-        }
-    #colorbox p:nth-child(2) {
-        padding: 5px 0 10px;
-        }
-    #colorbox input[type="range"] {
-        margin: 10px auto 35px;
-        }
+  nav.closed {
+    -webkit-transform: translateY(-160px);
+    transform: translateY(-160px);
+    }
+  #colorbox {
+    top: 65px;
+    left: 25px;
+    }
+  #colorbox p:first-child {
+    padding: 25px 0 6px;
+    }
+  #colorbox p:nth-child(2) {
+    padding: 5px 0 10px;
+    }
+  #colorbox input[type="range"] {
+    margin: 10px auto 35px;
+    }
 
-    #size {
-        width: 220px;
-        }
-    .control-gridsize {
-        display: inline;
-        }
+  #size {
+    width: 220px;
+    }
+  .control-gridsize {
+    display: inline;
+    }
 
-    /* messy x vs ... */
-    h1:after {
-        right: 45px;
-        }
-    #swatchplus:after {
-        line-height: 2.3;
-        }
-    .x #swatchplus:after {
-        line-height: 2.9;
-        }
+  /* messy x vs ... */
+  h1:after {
+    right: 45px;
+    }
+  #swatchplus:after {
+    line-height: 2.3;
+    }
+  .x #swatchplus:after {
+    line-height: 2.9;
+    }
 
-    /* ios7 title bar */
-    .ios7 #colorbox {
-        top: 85px;
-        }
-    .ios7 #loadbox, .ios7 .fullbox {
-        top: 60px;
-        }
-    .ios7 #paper, .ios7 #colorbox {
-        height: calc(100% - 60px - 25px - 25px);
-        }
+  /* ios7 title bar */
+  .ios7 #colorbox {
+    top: 85px;
+    }
+  .ios7 #loadbox, .ios7 .fullbox {
+    top: 60px;
+    }
+  .ios7 #paper, .ios7 #colorbox {
+    height: calc(100% - 60px - 25px - 25px);
+    }
 
 }
