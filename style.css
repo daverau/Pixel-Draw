@@ -2,7 +2,7 @@
 *   {
     -webkit-box-sizing: border-box;
     -moz-box-sizing: border-box;
-    box-sizing: border-box; 
+    box-sizing: border-box;
     }
 *   {
     cursor: pointer;
@@ -46,7 +46,7 @@ button {
     background: none;
     background: rgba(0, 0, 0, .07);
     background: #999;
-    color: rgba(255,255,255,.6); 
+    color: rgba(255,255,255,.6);
     border-radius: 6px;
     padding: .6em 1.2em;
     outline: none;
@@ -313,9 +313,10 @@ nav ul {
     width: 100%;
     }
 #paper {
-    float: left;
+    float: left; /* [todo] use flexbox! */
     margin: 0;
     border-collapse: collapse;
+    background: transparent !important;
     }
 .square #paper {
     float: none;
