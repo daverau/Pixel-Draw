@@ -490,6 +490,7 @@ function buttonsaveclick() {
 			setTimeout(function() {
 				// third
 				showSaveMsg();
+				update_loadbox();
 			}, 250);
 		}, 100);
 	}, 10);
