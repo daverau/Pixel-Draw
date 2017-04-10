@@ -1,8 +1,8 @@
 /*
 
-pixel draw
-by dave rau
-v1.1.2
+Pixel Draw
+by Dave Rau
+v1.3.0
 
 */
 
